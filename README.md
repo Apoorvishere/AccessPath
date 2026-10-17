@@ -18,7 +18,7 @@
   <a href="#roadmap">Roadmap</a>
 </p>
 
-> **Development status:** The responsive landing page and its interactive *illustrative* preview are implemented. The private journey studio connects to TinyFish Web Agent, and one live route-discovery smoke test completed successfully. Accessibility audits, accounts, durable reports, usage controls, and deployment are still in development. The example findings on the landing page are not real scan results.
+> **Development status:** The responsive landing page, its interactive *illustrative* preview, and a controlled demo journey are implemented. The private journey studio connects to TinyFish Web Agent, and one live route-discovery smoke test completed successfully. Accessibility audits, accounts, durable reports, usage controls, and deployment are still in development. The example findings on the landing page are not real scan results.
 
 ## The idea
 
@@ -41,6 +41,7 @@ AccessPath is designed for developers, QA teams, agencies, and teams responsible
 - Responsive AccessPath landing page with a custom five-color visual system.
 - Interactive, keyboard-operable journey preview; each example step can be selected.
 - Private journey creation screen, server-side TinyFish Agent request, and live run-status polling.
+- Controlled Northstar Services demo pages with an intentionally unlabeled email field and a corrected comparison page.
 - Successful live Agent API smoke test on a public documentation example domain. This verified route discovery, not accessibility auditing.
 - Clear labeling of sample content as illustrative.
 - Successful `pnpm build` production compilation and prerender.
@@ -76,6 +77,8 @@ pnpm dev
 ```
 
 Open **http://localhost:3000** to see the current web app.
+
+The local controlled demo starts at **http://localhost:3000/demo-site**. Follow **Home → Support → Contact**. The email field on `/demo-site/contact` intentionally has no associated label; `/demo-site/fixed/contact` has the corrected version. These pages are static and do not submit data. See [demo fixture notes](docs/demo-fixture.md).
 
 Check the production build:
 
@@ -121,7 +124,7 @@ The intended first scan is deliberately bounded: one public task, a small page l
 AccessPath/
 ├─ apps/web/           Next.js application (implemented)
 ├─ docs/               Team handoff and future technical documents
-├─ demo-site/          Controlled broken/fixed journey (planned)
+├─ apps/web/src/app/demo-site/  Controlled broken/fixed journey (implemented)
 ├─ packages/           Shared contracts (planned)
 ├─ supabase/           Database migrations and policies (planned)
 ├─ pnpm-workspace.yaml
@@ -133,7 +136,8 @@ AccessPath/
 - [x] Establish the TypeScript workspace and production-buildable web app.
 - [x] Design the landing page and interactive illustrative journey preview.
 - [x] Connect a private journey form to TinyFish Web Agent and verify one live route-discovery run.
-- [ ] Publish a controlled, public demo journey with known accessibility issues and a corrected version.
+- [x] Build a controlled demo journey with a known accessibility issue and a corrected version.
+- [ ] Publish the demo journey for live TinyFish navigation.
 - [ ] Complete and record a real TinyFish Browser API run.
 - [ ] Run axe-core against the discovered pages and capture reproducible evidence.
 - [ ] Add authenticated scan submission, a durable worker queue, private reports, and usage limits.
@@ -142,7 +146,7 @@ AccessPath/
 
 ## Demonstration plan
 
-The judged demonstration will use a small website controlled by the team. The same visitor task will be run against an intentionally flawed version and a corrected version. We will show the actual TinyFish route, raw rule IDs, affected elements, and evidence. Any before/after claim will be based on real scans; the conceptual images in this README are not test results.
+The judged demonstration will use the controlled [Northstar Services fixture](docs/demo-fixture.md). A visitor can follow Home → Support → Contact; the contact page has one unlabeled email field. A separate corrected contact page provides a before/after comparison. Once the audit is implemented, we will show the actual TinyFish route, raw rule IDs, affected elements, and evidence. Any before/after claim will be based on real scans; the conceptual images in this README are not test results.
 
 ## Project documentation
 
