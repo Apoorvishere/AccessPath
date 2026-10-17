@@ -36,7 +36,7 @@
 .hero { display: grid; min-height: min(700px, 80vh); grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr); background: var(--sky); }
 .heroText { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 60px clamp(24px, 8vw, 130px); }
 .eyebrow, .cardNumber { font-family: var(--font-mono), monospace; font-size: 10px; font-weight: 600; letter-spacing: .12em; }
-.eyebrow { color: #4e5d68; }
+.eyebrow { color: #42525e; }
 .hero h1 { max-width: 720px; margin: 32px 0 20px; font-family: var(--font-display), sans-serif; font-size: clamp(54px, 6vw, 104px); font-weight: 700; letter-spacing: -.085em; line-height: .99; }
 .hero h1 em { color: #58667d; font-family: Georgia, serif; font-weight: 400; letter-spacing: -.055em; }
 .hero p, .intro { max-width: 620px; font-size: clamp(15px, 1.2vw, 18px); line-height: 1.75; }
@@ -46,7 +46,7 @@
 .orbitOne, .orbitTwo { position: absolute; top: 50%; left: 50%; display: block; width: 70%; aspect-ratio: 1; border: 1px solid rgba(255,255,255,.5); border-radius: 50%; transform: translate(-50%, -50%); }
 .orbitTwo { width: 105%; }
 .star { position: absolute; top: 48%; left: 50%; color: #f6f9fc; font-size: clamp(110px, 20vw, 340px); line-height: 1; transform: translate(-50%, -50%); }
-.artCaption { position: absolute; right: 30px; bottom: 25px; color: white; font-family: var(--font-mono), monospace; font-size: 11px; }
+.artCaption { position: absolute; right: 30px; bottom: 25px; color: var(--ink); font-family: var(--font-mono), monospace; font-size: 11px; }
 .homeLower { display: grid; grid-template-columns: .5fr 1.2fr 1fr; gap: 26px; align-items: start; padding: 85px clamp(24px, 6vw, 100px); }
 .homeLower h2 { margin: 0; font-family: var(--font-display), sans-serif; font-size: clamp(29px, 3vw, 49px); letter-spacing: -.055em; line-height: 1.1; }
 .homeLower p { margin: 0; color: #4d555e; line-height: 1.7; }
@@ -65,7 +65,7 @@
 .supportCard a:hover, .aside a:hover, .textLink:hover { color: #4c5d8b; }
 .formPanel h2 { margin-bottom: 38px; }
 .formField { margin-bottom: 25px; }
-.formField label { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+.formField label, .orphanLabel { display: block; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
 .formField input, .formField textarea { width: 100%; border: 1px solid #8795a3; border-radius: 0; padding: 15px 16px; background: #f9fbfd; color: var(--ink); font: inherit; font-size: 14px; }
 .formField textarea { resize: vertical; }
 .formField input::placeholder { color: #687580; opacity: 1; }

@@ -19,7 +19,7 @@ The intended journey is Home → Support → Contact. TinyFish's observed route 
 
 ## Known fixture
 
-`/demo-site/contact` contains an email input that has placeholder text but no visible `<label>`, `aria-label`, or `aria-labelledby`. A placeholder is not a reliable accessible name. The corrected page associates a visible `Email address` label with the input using matching `htmlFor` and `id` values.
+`/demo-site/contact` displays “Email address” as a plain `<span>` above the email input. That text is not programmatically associated with the input, and the input has no other accessible name. The corrected page uses a visible `<label>` associated with the input through matching `htmlFor` and `id` values.
 
 The expected automated finding is an accessible-name or form-label rule on the original page and its absence for that field on the corrected page. **This is an expectation, not a scan result.** Record the actual rule ID and result only after the browser audit runs. Other findings may occur and should be kept in the report if verified.
 

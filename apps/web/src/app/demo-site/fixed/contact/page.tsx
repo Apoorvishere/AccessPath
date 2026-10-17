@@ -30,7 +30,7 @@ export default function FixedDemoContact() {
         <aside className={styles.aside}>
           <span className={styles.cardNumber}>BEFORE / AFTER</span>
           <h2>One small change, a clearer field.</h2>
-          <p>The original sample has an email field with placeholder text but no accessible name. This version uses a visible, associated label.</p>
+          <p>The original sample displays “Email address” without associating it with the field. This version uses a visible, associated label.</p>
           <Link href="/demo-site/contact">View original sample <span aria-hidden="true">↗</span></Link>
         </aside>
       </div>

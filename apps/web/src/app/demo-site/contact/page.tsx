@@ -17,8 +17,9 @@ export default function DemoContact() {
               <input id="demo-name" name="name" type="text" autoComplete="name" />
             </div>
             <div className={styles.formField}>
-              {/* Intentional fixture: this visible field has no programmatic label. */}
-              <input id="demo-email" name="email" type="email" placeholder="Email address" autoComplete="email" />
+              {/* Intentional fixture: visible text is not programmatically associated with this field. */}
+              <span className={styles.orphanLabel}>Email address</span>
+              <input id="demo-email" name="email" type="email" autoComplete="email" />
             </div>
             <div className={styles.formField}>
               <label htmlFor="demo-message">Your question</label>

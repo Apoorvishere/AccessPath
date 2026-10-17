@@ -12,7 +12,7 @@ export default function DemoSiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className={styles.site}>
       <header className={styles.header}>
-        <Link className={styles.brand} href="/demo-site" aria-label="Northstar Services home">
+        <Link className={styles.brand} href="/demo-site">
           <span className={styles.brandMark} aria-hidden="true">N<span>✦</span></span>
           <span>NORTHSTAR<span className={styles.brandSub}>SERVICES</span></span>
         </Link>
