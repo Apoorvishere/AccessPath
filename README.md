@@ -18,7 +18,7 @@
   <a href="#roadmap">Roadmap</a>
 </p>
 
-> **Development status:** The designed, responsive landing page and its interactive *illustrative* journey preview are implemented. The production build passes. Live TinyFish navigation, audits, accounts, scan reports, and deployment are still in development. The example findings on the landing page are not real scan results.
+> **Development status:** The responsive landing page and its interactive *illustrative* preview are implemented. The private journey studio connects to TinyFish Web Agent, and one live route-discovery smoke test completed successfully. Accessibility audits, accounts, durable reports, usage controls, and deployment are still in development. The example findings on the landing page are not real scan results.
 
 ## The idea
 
@@ -40,13 +40,14 @@ AccessPath is designed for developers, QA teams, agencies, and teams responsible
 - Next.js 16 and React 19 web application in a pnpm workspace.
 - Responsive AccessPath landing page with a custom five-color visual system.
 - Interactive, keyboard-operable journey preview; each example step can be selected.
+- Private journey creation screen, server-side TinyFish Agent request, and live run-status polling.
+- Successful live Agent API smoke test on a public documentation example domain. This verified route discovery, not accessibility auditing.
 - Clear labeling of sample content as illustrative.
 - Successful `pnpm build` production compilation and prerender.
 
 **Not yet implemented**
 
-- Live journey creation and TinyFish API calls.
-- Browser accessibility audits and real report evidence.
+- TinyFish Browser API integration, accessibility audits, and real report evidence.
 - Authentication, database storage, job queue, quotas, and production hosting.
 
 This section will be updated from tested code as milestones land. Planned capabilities below describe the intended product, not features that already work.
@@ -82,11 +83,11 @@ Check the production build:
 pnpm build
 ```
 
-The landing page currently needs no API keys. When the live workflow is added, required environment variable names and setup steps will be documented in `.env.example`; credentials must never be committed.
+The landing page needs no API keys. To run the private journey studio locally, copy `apps/web/.env.example` to `apps/web/.env.local` and set `TINYFISH_API_KEY`, a private `ACCESSPATH_DEMO_CODE` of at least 16 characters, and exact public hostnames in `ACCESSPATH_ALLOWED_HOSTS`. For example, `ACCESSPATH_ALLOWED_HOSTS=example.com` permits only that starting hostname in the private preview. Restart the dev server after changing the file. Never commit `.env.local` or put API keys in `NEXT_PUBLIC_*` variables. This preview code is a temporary development gate; it is not the intended public-user flow.
 
 ## Technical design
 
-The following architecture is **planned**. The web app is the only implemented component today.
+The following architecture is **planned**. The web app and a private TinyFish Agent route are implemented today; identity, durable jobs, browser audits, and private evidence storage are not.
 
 ```mermaid
 flowchart LR
@@ -131,8 +132,9 @@ AccessPath/
 
 - [x] Establish the TypeScript workspace and production-buildable web app.
 - [x] Design the landing page and interactive illustrative journey preview.
+- [x] Connect a private journey form to TinyFish Web Agent and verify one live route-discovery run.
 - [ ] Publish a controlled, public demo journey with known accessibility issues and a corrected version.
-- [ ] Complete and record a real TinyFish Agent and Browser API run.
+- [ ] Complete and record a real TinyFish Browser API run.
 - [ ] Run axe-core against the discovered pages and capture reproducible evidence.
 - [ ] Add authenticated scan submission, a durable worker queue, private reports, and usage limits.
 - [ ] Test user isolation, failure states, mobile layout, keyboard access, and production deployment.

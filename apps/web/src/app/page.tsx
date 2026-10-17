@@ -62,8 +62,8 @@ export default function Home() {
           <a href="#about">About</a>
         </nav>
 
-        <a className={styles.headerAction} href="#approach">
-          Explore the method <Arrow diagonal />
+        <a className={styles.headerAction} href="/journeys/new">
+          Create a journey <Arrow diagonal />
         </a>
       </header>
 
@@ -189,7 +189,7 @@ export default function Home() {
           </div>
           <div className={styles.footerColumns}>
             <div><h3>Explore</h3><a href="#top">Home</a><a href="#approach">Our approach</a><a href="#example-report">Report preview</a></div>
-            <div><h3>Project</h3><span>GitHub link coming at launch</span><span>License to be selected</span><span>Privacy policy in preparation</span></div>
+            <div><h3>Project</h3><a href="https://github.com/Apoorvishere/AccessPath" target="_blank" rel="noopener noreferrer">GitHub repository ↗</a><span>License to be selected</span><span>Privacy policy in preparation</span></div>
             <div><h3>Contact</h3><span>Team contact will be published with the repository.</span><span>USAR, GGSIPU East Delhi Campus</span></div>
           </div>
         </div>
