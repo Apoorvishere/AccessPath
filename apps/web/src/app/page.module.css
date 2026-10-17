@@ -266,6 +266,8 @@
 .reportHeading h2 em { color: var(--sky); }
 .reportHeading > p { max-width: 380px; margin: 24px 0 35px; color: #deebf2; font-size: 15px; line-height: 1.78; }
 .reportLegend { display: flex; align-items: center; gap: 10px; color: var(--sky); font-size: 9px; }
+.realReportLink { display: inline-flex; align-items: center; gap: 20px; margin-top: 24px; border-bottom: 1px solid var(--sky); padding: 8px 0; color: #f5f9fc; font-size: 12px; font-weight: 750; transition: gap .2s ease, color .2s ease; }
+.realReportLink:hover { gap: 27px; color: var(--sky); }
 .legendSquare { width: 9px; height: 9px; background: var(--sky); }
 .reportCanvas { width: 100%; max-width: 800px; background: #e9f0f5; color: var(--shadow); box-shadow: 16px 16px 0 #4f5a60; transition: transform .35s ease, box-shadow .35s ease; }
 .reportCanvas:hover { transform: translateY(-7px); box-shadow: 23px 23px 0 #4f5a60; }

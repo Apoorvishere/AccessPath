@@ -18,7 +18,7 @@
   <a href="#roadmap">Roadmap</a>
 </p>
 
-> **Development status:** The responsive landing page, its interactive *illustrative* preview, and a controlled demo journey are implemented. The private journey studio connects to TinyFish Web Agent, and one live route-discovery smoke test completed successfully. Accessibility audits, accounts, durable reports, usage controls, and deployment are still in development. The example findings on the landing page are not real scan results.
+> **Development status:** The landing page, controlled demo journey, and a verified demo-audit report are deployed. The private journey studio connects to TinyFish Web Agent and completed one live route-discovery smoke test. A separate local TinyFish Browser API + axe-core run detected a real label issue on the controlled contact page and no rule violations on its corrected counterpart. The audit is not yet connected to journey submission; accounts, durable reports, and usage controls remain in development. The original landing-page preview remains illustrative.
 
 ## The idea
 
@@ -42,13 +42,14 @@ AccessPath is designed for developers, QA teams, agencies, and teams responsible
 - Interactive, keyboard-operable journey preview; each example step can be selected.
 - Private journey creation screen, server-side TinyFish Agent request, and live run-status polling.
 - Controlled Northstar Services demo pages with an intentionally unlabeled email field and a corrected comparison page.
+- [Verified demo audit report](https://access-path-mu.vercel.app/reports/demo) showing the actual `label` rule finding, affected selector, and two screenshots from one TinyFish Browser API session. This report is a fixed snapshot, not a live scan endpoint.
 - Successful live Agent API smoke test on a public documentation example domain. This verified route discovery, not accessibility auditing.
 - Clear labeling of sample content as illustrative.
 - Successful `pnpm build` production compilation and prerender.
 
 **Not yet implemented**
 
-- TinyFish Browser API integration, accessibility audits, and real report evidence.
+- Browser auditing within the journey-submission flow and reports for arbitrary user targets. The controlled demo audit currently runs as a local script.
 - Authentication, database storage, job queue, quotas, and production hosting.
 
 This section will be updated from tested code as milestones land. Planned capabilities below describe the intended product, not features that already work.
@@ -79,6 +80,8 @@ pnpm dev
 Open **http://localhost:3000** to see the current web app.
 
 The local controlled demo starts at **http://localhost:3000/demo-site**. Follow **Home → Support → Contact**. The email field on `/demo-site/contact` intentionally has no associated label; `/demo-site/fixed/contact` has the corrected version. These pages are static and do not submit data. See [demo fixture notes](docs/demo-fixture.md).
+
+The [verified demo report](https://access-path-mu.vercel.app/reports/demo) presents a saved result from `node scripts/audit-demo.mjs https://access-path-mu.vercel.app`. The script reads the TinyFish key from the local ignored environment file, runs axe-core in one TinyFish Browser API session, saves local evidence under ignored `docs/evidence/`, and terminates the session. Its screenshots and selected findings are published in the report only after review. See [audit validation notes](docs/demo-audit-validation.md).
 
 Check the production build:
 
@@ -138,19 +141,21 @@ AccessPath/
 - [x] Connect a private journey form to TinyFish Web Agent and verify one live route-discovery run.
 - [x] Build a controlled demo journey with a known accessibility issue and a corrected version.
 - [ ] Publish the demo journey for live TinyFish navigation.
-- [ ] Complete and record a real TinyFish Browser API run.
-- [ ] Run axe-core against the discovered pages and capture reproducible evidence.
+- [x] Complete and record a real TinyFish Browser API run on the controlled demo pages.
+- [x] Run axe-core against the controlled contact pages and capture reproducible evidence.
+- [ ] Connect route discovery to browser auditing and generate private reports for approved sites.
 - [ ] Add authenticated scan submission, a durable worker queue, private reports, and usage limits.
 - [ ] Test user isolation, failure states, mobile layout, keyboard access, and production deployment.
 - [ ] Add verified screenshots, demo results, and live links to this README.
 
 ## Demonstration plan
 
-The judged demonstration will use the controlled [Northstar Services fixture](docs/demo-fixture.md). A visitor can follow Home → Support → Contact; the contact page has one unlabeled email field. A separate corrected contact page provides a before/after comparison. Once the audit is implemented, we will show the actual TinyFish route, raw rule IDs, affected elements, and evidence. Any before/after claim will be based on real scans; the conceptual images in this README are not test results.
+The judged demonstration uses the controlled [Northstar Services fixture](docs/demo-fixture.md). A visitor can follow Home → Support → Contact; the contact page has one unlabeled email field. A separate corrected contact page provides a before/after comparison. The [verified report](https://access-path-mu.vercel.app/reports/demo) shows the actual axe rule ID, affected selector, and browser screenshots. Its two contact pages were opened directly by the audit script; the TinyFish Agent has not yet discovered this deployed route as part of the same run. The conceptual images elsewhere in this README remain illustrative.
 
 ## Project documentation
 
 - [AZINHACK team handoff](docs/AccessPath-AZINHACK-2026-Team-Handoff.pdf) — product definition, architecture, presentation brief, demo plan, and source register.
+- [Demo audit validation](docs/demo-audit-validation.md) — exact scan method, verified finding, scope, and limits.
 - Architecture, security, deployment, and validation documents will be added as their corresponding features are implemented.
 
 ## AZINHACK 2026

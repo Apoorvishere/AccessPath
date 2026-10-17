@@ -155,6 +155,7 @@ export default function Home() {
           <h2 id="report-title">Evidence you can<br /><em>work from.</em></h2>
           <p>No mystery score. A useful report locates an issue within the task, names the check, and makes the next step clear.</p>
           <div className={styles.reportLegend}><span className={styles.legendSquare} /> Example data shown for layout only</div>
+          <a className={styles.realReportLink} href="/reports/demo">View a verified demo audit <Arrow diagonal /></a>
         </div>
         <div className={styles.reportCanvas}>
           <div className={styles.reportCanvasHeader}>
