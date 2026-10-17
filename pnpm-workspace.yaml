@@ -1,0 +1,6 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "demo-site"
+allowBuilds:
+  unrs-resolver: true
