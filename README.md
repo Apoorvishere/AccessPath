@@ -1,34 +1,40 @@
 <p align="center">
-  <img src="docs/assets/accesspath-hero.svg" alt="AccessPath graphic showing a visitor journey from goal to route to evidence" width="100%" />
+  <img src="docs/assets/accesspath-hero-v2.svg" alt="AccessPath: a visitor goal leads through a route to accessibility evidence" width="100%" />
 </p>
 
-# AccessPath
+<h1 align="center">AccessPath</h1>
 
-**Accessibility evidence for the route a visitor actually takes.**
+<p align="center"><strong>Accessibility evidence for the route a visitor actually takes.</strong></p>
 
 AccessPath starts with a visitor goal, discovers the route through a live website, and checks the pages along that route. Its report connects each automated finding to the page, affected element, and screenshot. Human review remains necessary; AccessPath does not certify WCAG conformance.
 
-- [Live web app](https://access-path-mu.vercel.app)
-- [Controlled Northstar demo](https://access-path-mu.vercel.app/demo-site)
-- [Verified demo audit](https://access-path-mu.vercel.app/reports/demo)
+<p align="center">
+  <a href="https://access-path-mu.vercel.app">Live app</a> ·
+  <a href="https://access-path-mu.vercel.app/demo-site">Try the controlled site</a> ·
+  <a href="https://access-path-mu.vercel.app/reports/demo">Open the verified audit</a>
+</p>
+
+> **Working prototype:** A live, approved-site scan has followed Home → Support → Contact, checked all three pages, identified the missing email-field label, and saved the report to an owner-only workspace. Public scanning of arbitrary sites is not enabled.
 
 ## The controlled journey
 
-The screenshots below are from the public Northstar test site used by the working scan. The visitor starts at Home, follows Support, and reaches the Contact form. The live report records the three visited pages and flags the contact page's email field under axe-core's `label` rule.
+The screenshots below are from the public Northstar test site used by the working scan. The visitor starts at Home, follows Support, and reaches the Contact form. The live report recorded **3 pages checked**, **1 rule with a violation**, **1 affected element**, and **3 page-level checks needing human review**. The finding is axe-core's `label` rule on the contact page's email field, `#demo-email`.
 
-**Home**
+<p align="center">
+  <img src="docs/assets/demo-home.png" alt="Northstar demo home page with a Find support link" width="49%" />
+  <img src="docs/assets/demo-contact.png" alt="Northstar demo contact page with a sample form" width="49%" />
+</p>
 
-![Northstar demo home page](docs/assets/demo-home.png)
+The controlled demo also has a [corrected contact page](https://access-path-mu.vercel.app/demo-site/fixed/contact) for comparison. Both forms are demonstrations and do not send data.
 
-**Contact**
-
-![Northstar demo contact page with the sample form](docs/assets/demo-contact.png)
-
-The [verified demo audit](https://access-path-mu.vercel.app/reports/demo) shows the rule and affected element. Signed-in users can also open their own saved live reports from the [dashboard](https://access-path-mu.vercel.app/dashboard).
+The [public verified demo audit](https://access-path-mu.vercel.app/reports/demo) shows the rule, affected element, and screenshots. Signed-in users can open their own saved live reports from the [dashboard](https://access-path-mu.vercel.app/dashboard).
 
 ## Why this matters
 
 A single URL check can miss the context of a task such as finding help or reaching a contact form. AccessPath asks what the visitor is trying to do, follows the route, and makes the resulting accessibility evidence easier to reproduce and act on. The intended users are developers, QA teams, agencies, and teams responsible for public-facing services.
+
+- **Input:** an approved public site and a visitor goal, such as “find the contact form.”
+- **Output:** the visited route, page screenshots, automated findings, affected elements, and checks for a person to complete.
 
 ## What works today
 
@@ -56,6 +62,20 @@ The live queue currently accepts only `https://access-path-mu.vercel.app/demo-si
 
 Next.js serves the UI and short API requests on Vercel. A separate Node worker on Railway handles browser work outside the web request. The queue is stored in Supabase PostgreSQL and claimed by a restricted worker function.
 
+```mermaid
+flowchart LR
+  A[Visitor goal] --> B[Next.js on Vercel]
+  B --> C[Supabase scan queue]
+  C --> D[Railway worker]
+  D --> E[TinyFish Agent: visited route]
+  D --> F[TinyFish Browser: page checks]
+  F --> G[Playwright + axe-core]
+  E --> H[Owner-only saved report]
+  G --> H
+```
+
+The worker limits the live preview to the approved Northstar host and at most three pages. It does not authenticate to the target site, submit its forms, or make purchases. A paused queue switch and account limits control paid runs.
+
 ## Local setup
 
 Requires Node.js 24 and pnpm 12.
@@ -81,6 +101,13 @@ pnpm --filter @accesspath/worker test
 ```
 
 The controlled fixture and the verified audit method are documented in [demo fixture](docs/demo-fixture.md) and [audit validation](docs/demo-audit-validation.md). Those notes distinguish recorded evidence from proposed capabilities.
+
+## Scope and limitations
+
+- The live queue is an invite-only, controlled preview for the Northstar demo. Arbitrary-site scans are future work.
+- Automated rule counts are not a count of every accessibility barrier or a WCAG conformance score.
+- A person still needs to verify findings in context and test keyboard use, screen readers, focus order, and task completion.
+- The landing-page journey preview is illustrative; the saved scan report is the record of a real run.
 
 ## Next build stage
 
