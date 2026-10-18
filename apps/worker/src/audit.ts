@@ -1,6 +1,6 @@
 import { access } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { chromium, type Browser, type BrowserContext } from "playwright-core";
+import { chromium, type Browser } from "playwright-core";
 import type { AuditPage, AuditResult, AuditViolation } from "./audit-types";
 import { approvedPageUrl, targetForStart, type ScanTarget } from "./targets";
 
@@ -82,7 +82,6 @@ export async function auditApprovedPages(urls: string[], startUrl: string, key: 
   if (!targetPolicy || !checkedUrls) throw new Error("Invalid approved audit route");
   let session: BrowserSession | undefined;
   let browser: Browser | undefined;
-  let context: BrowserContext | undefined;
   let stage = "checking the installed axe-core browser file";
   try {
     // Check before creating a paid session. Reading this file avoids bundler-altered axe.source.
@@ -91,9 +90,13 @@ export async function auditApprovedPages(urls: string[], startUrl: string, key: 
     session = await createSession(key, checkedUrls[0]);
     stage = "connecting to the browser";
     browser = await chromium.connectOverCDP(session.cdp_url, { timeout: 30_000 });
-    // The audit needs to inject axe-core on pages with strict CSP.
-    context = await browser.newContext({ bypassCSP: true });
-    const page = await context.newPage();
+    // TinyFish supplies an existing page. Opening a new context can close its session.
+    const context = browser.contexts()[0];
+    const page = context?.pages()[0];
+    if (!context || !page) throw new Error("Browser session opened without a page.");
+    stage = "allowing axe-core in the browser page";
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Page.setBypassCSP", { enabled: true });
     const pages: AuditPage[] = [];
 
     for (const [index, target] of checkedUrls.entries()) {
@@ -136,7 +139,6 @@ export async function auditApprovedPages(urls: string[], startUrl: string, key: 
     }
     throw new Error(`Audit stopped while ${stage}.`);
   } finally {
-    await context?.close().catch(() => {});
     await browser?.close().catch(() => {});
     if (session) await closeSession(key, session.session_id).catch(() => {
       console.warn("Could not confirm TinyFish Browser session cleanup. Check the dashboard.");
