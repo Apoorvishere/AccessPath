@@ -16,9 +16,14 @@ export default function DashboardPage() {
   const [task, setTask] = useState("Find the contact form through the support page.");
   const [saving, setSaving] = useState(false);
   const configured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+  const liveEnabled = process.env.NEXT_PUBLIC_ACCESSPATH_LIVE_SCANS_ENABLED === "true";
+  const [liveTask, setLiveTask] = useState("Find the contact form through the support page.");
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [liveError, setLiveError] = useState("");
+  const [liveMessage, setLiveMessage] = useState("");
 
-  async function loadScans() {
-    setLoading(true); setError("");
+  async function loadScans(silent = false) {
+    if (!silent) { setLoading(true); setError(""); }
     try {
       const response = await fetch("/api/scans", { cache: "no-store" });
       if (response.status === 401) { window.location.assign("/login"); return; }
@@ -26,10 +31,34 @@ export default function DashboardPage() {
       if (!response.ok || !Array.isArray(data.scans)) throw new Error(data.error || "Could not load scans.");
       setScans(data.scans);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load scans."); }
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   }
 
   useEffect(() => { if (configured) void loadScans(); else setLoading(false); }, [configured]);
+  useEffect(() => {
+    if (!scans.some(scan => scan.status === "queued" || scan.status === "running")) return;
+    const timer = setTimeout(() => { void loadScans(true); }, 8000);
+    return () => clearTimeout(timer);
+  }, [scans]);
+
+  async function startLive(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (liveBusy || !liveEnabled) return;
+    setLiveBusy(true); setLiveError(""); setLiveMessage("");
+    try {
+      const response = await fetch("/api/scans", {
+        method: "POST", cache: "no-store",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
+        body: JSON.stringify({ targetUrl: "https://access-path-mu.vercel.app/demo-site", task: liveTask.trim() }),
+      });
+      if (response.status === 401) { window.location.assign("/login"); return; }
+      const data: { id?: string; error?: string } = await response.json();
+      if (!response.ok || !data.id) throw new Error(data.error || "Could not queue this scan.");
+      setLiveMessage("Scan queued. This list refreshes while it runs.");
+      await loadScans(true);
+    } catch (cause) { setLiveError(cause instanceof Error ? cause.message : "Could not queue this scan."); }
+    finally { setLiveBusy(false); }
+  }
 
   async function selectFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -77,8 +106,20 @@ export default function DashboardPage() {
       <div className={styles.eyebrow}>WORKSPACE / SAVED EVIDENCE</div>
       <div className={styles.hero}><div><h1>Your reports,<br /><em>in one place.</em></h1><p>Import a controlled-demo audit and keep its findings available across visits. Each account sees only its own saved scans.</p></div><div className={styles.heroCount}><strong>{scans.length}</strong><span>RECENT SCANS</span></div></div>
       {!configured && <p className={styles.alert} role="status">Create the Supabase project and add its settings to enable accounts and saved reports.</p>}
+      {liveEnabled && <section className={styles.importPanel} aria-labelledby="live-title">
+        <div><span className={styles.sectionIndex}>01 / LIVE CONTROLLED SCAN</span><h2 id="live-title">Follow a real route.</h2><p>Invited accounts can explore the Northstar demo, then check up to three visited pages. One scan per account each UTC day while the shared preview budget lasts.</p></div>
+        <div className={styles.importForm}>
+          <form onSubmit={startLive}>
+            <label>APPROVED SITE<input readOnly value="https://access-path-mu.vercel.app/demo-site" /></label>
+            <label>VISITOR GOAL<input required minLength={12} maxLength={180} value={liveTask} onChange={event => setLiveTask(event.target.value)} disabled={liveBusy} /></label>
+            <button type="submit" disabled={liveBusy || !configured}>{liveBusy ? "Queuing…" : "Start controlled scan"}<span aria-hidden="true">↗</span></button>
+          </form>
+          {liveError && <p className={styles.error} role="alert">{liveError}</p>}
+          {liveMessage && <p className={styles.success} role="status">{liveMessage}</p>}
+        </div>
+      </section>}
       <section className={styles.importPanel} aria-labelledby="import-title">
-        <div><span className={styles.sectionIndex}>01 / SAVE EVIDENCE</span><h2 id="import-title">Bring in your audit.</h2><p>The existing JSON export is enough. This import does not run TinyFish or use API credits.</p></div>
+        <div><span className={styles.sectionIndex}>{liveEnabled ? "02" : "01"} / SAVE EVIDENCE</span><h2 id="import-title">Bring in your audit.</h2><p>The existing JSON export is enough. This import does not run TinyFish or use API credits.</p></div>
         <div className={styles.importForm}>
           <label className={styles.fileLabel}>AUDIT JSON<input type="file" accept=".json,application/json" onChange={selectFile} disabled={!configured || saving} /></label>
           {draft && <form onSubmit={save}>
@@ -91,7 +132,7 @@ export default function DashboardPage() {
         </div>
       </section>
       <section className={styles.saved} aria-labelledby="saved-title">
-        <div className={styles.sectionHead}><span>02 / MY SAVED SCANS</span><span>OWNER ONLY</span></div>
+        <div className={styles.sectionHead}><span>{liveEnabled ? "03" : "02"} / MY SAVED SCANS</span><span>OWNER ONLY</span></div>
         <h2 id="saved-title">Evidence library.</h2>
         {loading && <p className={styles.status}>Loading your reports…</p>}
         {!loading && configured && scans.length === 0 && <p className={styles.status}>No saved reports yet. Import the audit you downloaded from the journey studio.</p>}
@@ -99,11 +140,13 @@ export default function DashboardPage() {
           {scans.map((scan, index) => <li key={scan.id}>
             <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
             <div><strong>{scan.task}</strong><small>{scan.target_url}</small><span>{scan.source.toUpperCase()} / {scan.status.toUpperCase()} / {new Date(scan.created_at).toLocaleDateString()}</span></div>
-            <a href={`/reports/local?scan=${encodeURIComponent(scan.id)}`}>Open report ↗</a>
+            {scan.status === "completed" || scan.status === "partial"
+              ? <a href={`/reports/local?scan=${encodeURIComponent(scan.id)}`}>Open report ↗</a>
+              : <span className={styles.scanState}>{scan.status === "queued" ? "WAITING" : scan.status === "running" ? "IN PROGRESS" : "NO REPORT"}</span>}
           </li>)}
         </ol>
       </section>
-      <p className={styles.scope}>This is the saved-report foundation. Live multi-user scans remain disabled until the private worker and spend limits are connected.</p>
+      <p className={styles.scope}>{liveEnabled ? "Automated findings require human review. A completed scan is not a conformance certificate." : "Live multi-user scans remain disabled until the private worker and spend limits are connected."}</p>
     </div>
   </main>;
 }

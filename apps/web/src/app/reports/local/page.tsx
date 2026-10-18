@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent } from "react";
 import type { AuditResult, AuditViolation } from "@/lib/audit-types";
+import type { JourneyResult } from "@/lib/journey-types";
 import styles from "./page.module.css";
 
 const STORAGE_KEY = "accesspath:local-audit-report";
@@ -84,6 +85,7 @@ export default function LocalReportPage() {
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [error, setError] = useState("");
   const [source, setSource] = useState<"studio" | "file" | "saved" | null>(null);
+  const [journey, setJourney] = useState<JourneyResult | null>(null);
 
   useEffect(() => {
     const scanId = new URLSearchParams(window.location.search).get("scan");
@@ -95,9 +97,17 @@ export default function LocalReportPage() {
       void (async () => {
         try {
           const response = await fetch(`/api/scans/${encodeURIComponent(scanId)}`, { cache: "no-store" });
-          const data: { scan?: { report?: unknown }; error?: string } = await response.json();
+          const data: { scan?: { report?: unknown; journey?: unknown }; error?: string } = await response.json();
           if (!response.ok) throw new Error(data.error || "Could not load this saved report.");
           setAudit(parseAudit(data.scan?.report));
+          const route = data.scan?.journey;
+          if (route && typeof route === "object" && !Array.isArray(route)) {
+            const candidate = route as Partial<JourneyResult>;
+            if (candidate.outcome === "completed" && typeof candidate.summary === "string" && Array.isArray(candidate.steps) &&
+                candidate.steps.every(step => step && typeof step === "object" && typeof step.title === "string" && typeof step.url === "string" && typeof step.action === "string" && typeof step.observation === "string" && safeHttps(step.url))) {
+              setJourney(candidate as JourneyResult);
+            }
+          }
           setSource("saved");
         } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load this saved report."); }
       })();
@@ -121,6 +131,7 @@ export default function LocalReportPage() {
       if (file.size > MAX_FILE_BYTES) throw new Error("Choose an audit export smaller than 5 MB.");
       const parsed = parseAudit(JSON.parse(await file.text()));
       setAudit(parsed);
+      setJourney(null);
       setSource("file");
       try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(parsed)); } catch { /* The imported file remains available in this tab. */ }
     } catch (cause) {
@@ -175,6 +186,15 @@ export default function LocalReportPage() {
           </section>
         ) : (
           <>
+            {journey && <section className={styles.journey} aria-labelledby="journey-title">
+              <div className={styles.sectionHead}><span>LIVE DISCOVERY</span><span>{journey.steps.length} VISITED STEPS</span></div>
+              <h2 id="journey-title">The route the agent followed.</h2>
+              <p>{journey.summary}</p>
+              <ol>{journey.steps.map((step, index) => <li key={`${index}-${step.url}`}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <div><strong>{step.title}</strong><small>{step.action}</small><p>{step.observation}</p></div>
+              </li>)}</ol>
+            </section>}
             <section className={styles.summary} aria-labelledby="summary-title">
               <div className={styles.sectionHead}><span>01 / OVERVIEW</span><span>CHECKED {checkedAt} IST</span></div>
               <h2 id="summary-title">A route with <em>{findings.length} detected {findings.length === 1 ? "rule" : "rules"}.</em></h2>

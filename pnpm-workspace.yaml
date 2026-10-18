@@ -3,4 +3,5 @@ packages:
   - "packages/*"
   - "demo-site"
 allowBuilds:
+  esbuild: set this to true or false
   unrs-resolver: true
