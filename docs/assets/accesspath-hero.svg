@@ -8,7 +8,7 @@
     .step { font: 700 16px Arial, sans-serif; }
     .cursor { animation: travel 5s ease-in-out infinite; }
     .pulse { animation: pulse 5s ease-in-out infinite; }
-    @keyframes travel { 0%,8% { transform: translateX(0); } 45%,55% { transform: translateX(176px); } 90%,100% { transform: translateX(352px); } }
+    @keyframes travel { 0%,8% { transform: translateX(0); } 45%,55% { transform: translateX(176px); } 90%,100% { transform: translateX(292px); } }
     @keyframes pulse { 0%,75%,100% { opacity: .2; } 86% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) { .cursor, .pulse { animation: none; } }
   </style>
