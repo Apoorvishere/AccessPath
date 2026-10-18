@@ -48,6 +48,8 @@ The live queue accepts two exact starting URLs: the [Northstar demo](https://acc
 
 ## Demo in two minutes
 
+Watch the [AccessPath demo video](docs/assets/accesspath-demo.mp4).
+
 1. Open the [controlled demo](https://access-path-mu.vercel.app/demo-site) and follow **Home → Support → Contact**.
 2. Open the [verified audit report](https://access-path-mu.vercel.app/reports/demo). Inspect the `label` finding on the contact form and its screenshot.
 3. Open the [corrected contact page](https://access-path-mu.vercel.app/demo-site/fixed/contact) to see the associated label.
