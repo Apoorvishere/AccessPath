@@ -70,7 +70,10 @@ export async function discoverDemoJourney(targetUrl: string, task: string, apiKe
   const started: unknown = await start.json();
   if (!record(started) || typeof started.run_id !== "string" || !/^[A-Za-z0-9_-]{8,100}$/.test(started.run_id)) throw new Error("Invalid agent run ID");
 
-  for (let attempt = 0; attempt < 45; attempt += 1) {
+  // A run can finish after its requested agent duration because startup and
+  // result finalization add latency. Allow four minutes for polling while
+  // keeping the provider's own max_duration_seconds at 90.
+  for (let attempt = 0; attempt < 80; attempt += 1) {
     await new Promise(resolve => setTimeout(resolve, 3000));
     const response = await fetch(`${API}/runs/${encodeURIComponent(started.run_id)}`, {
       headers: { "X-API-Key": apiKey }, cache: "no-store", signal: AbortSignal.timeout(15_000),

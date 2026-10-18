@@ -24,6 +24,7 @@ type ClaimedScan = { scan_id: string; target_url: string; task: string };
 
 function diagnostic(message: string): string {
   return message
+    .replace(/(?:https?|wss?):\/\/\S+/gi, "[url]")
     .replace(/sb_secret_[A-Za-z0-9_-]+/g, "[redacted]")
     .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
     .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[redacted]")
@@ -79,8 +80,9 @@ async function processScan(scan: ClaimedScan): Promise<void> {
     stage = "saving";
     await finish(scan, "completed", journey, report, null);
     process.stdout.write(`Scan ${scan.scan_id} completed with ${report.pages.length} checked pages.\n`);
-  } catch {
-    process.stderr.write(`Scan ${scan.scan_id} stopped during ${stage}.\n`);
+  } catch (error) {
+    const reason = error instanceof Error ? diagnostic(error.message) : "unknown error";
+    process.stderr.write(`Scan ${scan.scan_id} stopped during ${stage}: ${reason}\n`);
     try { await finish(scan, "failed", journey, null, `${stage}_failed`); }
     catch { process.stderr.write(`Scan ${scan.scan_id} needs manual database review; it will not be retried automatically.\n`); }
   }
