@@ -60,6 +60,7 @@ export default function Home() {
           <a href="#approach">Approach</a>
           <a href="#example-report">Report preview</a>
           <a href="#about">About</a>
+          <a href="/dashboard">My workspace</a>
         </nav>
 
         <a className={styles.headerAction} href="/journeys/new">

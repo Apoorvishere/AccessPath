@@ -83,9 +83,26 @@ function Finding({ finding, pageUrl, number }: { finding: AuditViolation; pageUr
 export default function LocalReportPage() {
   const [audit, setAudit] = useState<AuditResult | null>(null);
   const [error, setError] = useState("");
-  const [source, setSource] = useState<"studio" | "file" | null>(null);
+  const [source, setSource] = useState<"studio" | "file" | "saved" | null>(null);
 
   useEffect(() => {
+    const scanId = new URLSearchParams(window.location.search).get("scan");
+    if (scanId) {
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId)) {
+        setError("This saved-report link is invalid.");
+        return;
+      }
+      void (async () => {
+        try {
+          const response = await fetch(`/api/scans/${encodeURIComponent(scanId)}`, { cache: "no-store" });
+          const data: { scan?: { report?: unknown }; error?: string } = await response.json();
+          if (!response.ok) throw new Error(data.error || "Could not load this saved report.");
+          setAudit(parseAudit(data.scan?.report));
+          setSource("saved");
+        } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load this saved report."); }
+      })();
+      return;
+    }
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (!saved) return;
@@ -123,7 +140,7 @@ export default function LocalReportPage() {
       <header className={styles.siteHeader}>
         <a className={styles.brand} href="/" aria-label="AccessPath home">accesspath<span>.</span></a>
         <span>REPORT / LOCAL PREVIEW</span>
-        <a href="/journeys/new">Journey studio ↗</a>
+        <a href="/dashboard">My workspace ↗</a>
       </header>
 
       <div className={styles.shell}>
@@ -135,7 +152,7 @@ export default function LocalReportPage() {
           </div>
           <div className={styles.heroAside}>
             <span>REPORT SOURCE</span>
-            <strong>{source === "studio" ? "This tab’s audit" : source === "file" ? "Imported JSON" : "Awaiting audit"}</strong>
+            <strong>{source === "studio" ? "This tab’s audit" : source === "file" ? "Imported JSON" : source === "saved" ? "Saved to workspace" : "Awaiting audit"}</strong>
             <small>Local preview · no new scan or API charge</small>
           </div>
         </div>
