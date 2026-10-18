@@ -2,6 +2,7 @@ import { access } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { chromium, type Browser } from "playwright-core";
 import type { AuditPage, AuditResult, AuditViolation } from "./audit-types";
+import { approvedPageUrl, targetForStart, type ScanTarget } from "./targets";
 
 const BROWSER_API = "https://api.browser.tinyfish.ai";
 const MAX_PAGES = 3;
@@ -23,26 +24,9 @@ function safeFailureDetail(error: unknown): string {
     .slice(0, 220);
 }
 
-function approvedUrl(value: unknown, allowedHosts: Set<string>, origin?: string): URL | null {
-  if (typeof value !== "string" || value.length > 2048) return null;
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.port || url.username || url.password || !allowedHosts.has(url.hostname.toLowerCase())) return null;
-    if (origin && url.origin !== origin) return null;
-    // This stage deliberately limits paid audits to the controlled Northstar fixture.
-    if (url.hostname !== "access-path-mu.vercel.app" || !/^\/demo-site(?:\/|$)/.test(url.pathname)) return null;
-    url.hash = "";
-    return url;
-  } catch {
-    return null;
-  }
-}
-
-export function validateAuditUrls(value: unknown, allowedHosts: Set<string>): string[] | null {
+export function validateAuditUrls(value: unknown, target: ScanTarget): string[] | null {
   if (!Array.isArray(value) || value.length < 1 || value.length > MAX_PAGES) return null;
-  const first = approvedUrl(value[0], allowedHosts);
-  if (!first) return null;
-  const urls = value.map((item) => approvedUrl(item, allowedHosts, first.origin)?.toString() ?? null);
+  const urls = value.map((item) => approvedPageUrl(item, target));
   if (urls.some((item) => item === null)) return null;
   const unique = [...new Set(urls as string[])];
   return unique.length === urls.length ? unique : null;
@@ -92,8 +76,10 @@ function summarize(raw: unknown): Pick<AuditPage, "violations" | "needsReviewCou
   return { violations, needsReviewCount: raw.incomplete.length, passedRuleCount: raw.passes.length };
 }
 
-export async function auditApprovedPages(urls: string[], key: string, allowedHosts: Set<string>): Promise<AuditResult> {
-  const origin = new URL(urls[0]).origin;
+export async function auditApprovedPages(urls: string[], startUrl: string, key: string): Promise<AuditResult> {
+  const targetPolicy = targetForStart(startUrl);
+  const checkedUrls = targetPolicy && validateAuditUrls(urls, targetPolicy);
+  if (!targetPolicy || !checkedUrls) throw new Error("Invalid approved audit route");
   let session: BrowserSession | undefined;
   let browser: Browser | undefined;
   let stage = "checking the installed axe-core browser file";
@@ -101,18 +87,18 @@ export async function auditApprovedPages(urls: string[], key: string, allowedHos
     // Check before creating a paid session. Reading this file avoids bundler-altered axe.source.
     await access(AXE_SCRIPT);
     stage = "starting the TinyFish Browser session";
-    session = await createSession(key, urls[0]);
+    session = await createSession(key, checkedUrls[0]);
     stage = "connecting to the browser";
     browser = await chromium.connectOverCDP(session.cdp_url, { timeout: 30_000 });
     const context = browser.contexts()[0] ?? await browser.newContext();
     const page = context.pages()[0] ?? await context.newPage();
     const pages: AuditPage[] = [];
 
-    for (const [index, target] of urls.entries()) {
+    for (const [index, target] of checkedUrls.entries()) {
       stage = `loading approved page ${index + 1}`;
       const response = await page.goto(target, { waitUntil: "domcontentloaded", timeout: 30_000 });
-      const finalUrl = approvedUrl(page.url(), allowedHosts, origin);
-      if (!response?.ok() || !finalUrl || finalUrl.toString() !== target) {
+      const finalUrl = approvedPageUrl(page.url(), targetPolicy);
+      if (!response?.ok() || !finalUrl || finalUrl !== target) {
         throw new Error("An audited page did not load at its approved URL.");
       }
       stage = `injecting axe-core on approved page ${index + 1}`;
@@ -128,7 +114,7 @@ export async function auditApprovedPages(urls: string[], key: string, allowedHos
       stage = `capturing approved page ${index + 1}`;
       const bytes = await page.screenshot({ type: "jpeg", quality: 65, fullPage: false });
       pages.push({
-        url: finalUrl.toString(),
+        url: finalUrl,
         title: (await page.title()).slice(0, 180),
         ...findings,
         screenshot: bytes.length <= MAX_SCREENSHOT_BYTES ? `data:image/jpeg;base64,${bytes.toString("base64")}` : null,

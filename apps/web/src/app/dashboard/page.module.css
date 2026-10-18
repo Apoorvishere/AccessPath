@@ -1,6 +1,6 @@
 .page { --ink:#212227; --sky:#bdd4e7; min-height:100vh; background:#e9eef2; color:var(--ink); }
 .page a { text-decoration:none; }
-.page :is(a,button,input):focus-visible { outline:3px solid #8693ab; outline-offset:3px; }
+.page :is(a,button,input,select):focus-visible { outline:3px solid #8693ab; outline-offset:3px; }
 .header { display:flex; align-items:center; gap:20px; min-height:78px; padding:0 clamp(20px,5vw,80px); background:var(--ink); color:white; }
 .brand { font:700 26px var(--font-display),Arial,sans-serif; letter-spacing:-.08em; }
 .brand span { color:var(--sky); }
@@ -28,6 +28,8 @@
 .importForm form { display:grid; gap:18px; }
 .importForm form label { display:grid; gap:10px; }
 .importForm form label input { width:100%; min-height:52px; padding:14px; border:1px solid #8195a2; background:#e6eef4; font:500 14px var(--font-body),Arial,sans-serif; }
+.siteSelect { width:100%; min-height:52px; padding:14px; border:1px solid #8195a2; background:#e6eef4; color:var(--ink); font:500 14px var(--font-body),Arial,sans-serif; }
+.siteUrl { overflow-wrap:anywhere; color:#526775; }
 .importForm form button { display:flex; justify-content:space-between; padding:17px 19px; border:0; background:var(--ink); color:white; font-weight:700; cursor:pointer; transition:transform .2s,background .2s; }
 .importForm form button:hover:not(:disabled) { transform:translateY(-2px); background:#485b67; }
 .importForm form button:disabled { opacity:.6; }

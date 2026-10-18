@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { SCAN_TARGETS } from "@/lib/scan-targets";
 import styles from "./page.module.css";
 
 type SavedScan = { id: string; source: string; target_url: string; task: string; status: string; created_at: string; finished_at: string | null };
@@ -17,7 +18,8 @@ export default function DashboardPage() {
   const [saving, setSaving] = useState(false);
   const configured = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
   const liveEnabled = process.env.NEXT_PUBLIC_ACCESSPATH_LIVE_SCANS_ENABLED === "true";
-  const [liveTask, setLiveTask] = useState("Find the contact form through the support page.");
+  const [targetUrl, setTargetUrl] = useState<string>(SCAN_TARGETS[0].url);
+  const [liveTask, setLiveTask] = useState<string>(SCAN_TARGETS[0].exampleGoal);
   const [liveBusy, setLiveBusy] = useState(false);
   const [liveError, setLiveError] = useState("");
   const [liveMessage, setLiveMessage] = useState("");
@@ -49,7 +51,7 @@ export default function DashboardPage() {
       const response = await fetch("/api/scans", {
         method: "POST", cache: "no-store",
         headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
-        body: JSON.stringify({ targetUrl: "https://access-path-mu.vercel.app/demo-site", task: liveTask.trim() }),
+        body: JSON.stringify({ targetUrl, task: liveTask.trim() }),
       });
       if (response.status === 401) { window.location.assign("/login"); return; }
       const data: { id?: string; error?: string } = await response.json();
@@ -107,10 +109,14 @@ export default function DashboardPage() {
       <div className={styles.hero}><div><h1>Your reports,<br /><em>in one place.</em></h1><p>Import a controlled-demo audit and keep its findings available across visits. Each account sees only its own saved scans.</p></div><div className={styles.heroCount}><strong>{scans.length}</strong><span>RECENT SCANS</span></div></div>
       {!configured && <p className={styles.alert} role="status">Create the Supabase project and add its settings to enable accounts and saved reports.</p>}
       {liveEnabled && <section className={styles.importPanel} aria-labelledby="live-title">
-        <div><span className={styles.sectionIndex}>01 / LIVE CONTROLLED SCAN</span><h2 id="live-title">Follow a real route.</h2><p>Invited accounts can explore the Northstar demo, then check up to three visited pages. One scan per account each UTC day while the shared preview budget lasts.</p></div>
+        <div><span className={styles.sectionIndex}>01 / LIVE CONTROLLED SCAN</span><h2 id="live-title">Follow a real route.</h2><p>Choose an approved public site and write your own visitor goal. The agent can read up to three visited pages within the chosen site. Tasks that need login, form submission, or pages outside the approved area cannot complete.</p></div>
         <div className={styles.importForm}>
           <form onSubmit={startLive}>
-            <label>APPROVED SITE<input readOnly value="https://access-path-mu.vercel.app/demo-site" /></label>
+            <label>APPROVED SITE<select className={styles.siteSelect} value={targetUrl} onChange={event => {
+              const selected = SCAN_TARGETS.find(target => target.url === event.target.value);
+              if (selected) { setTargetUrl(selected.url); setLiveTask(selected.exampleGoal); }
+            }} disabled={liveBusy}>{SCAN_TARGETS.map(target => <option value={target.url} key={target.url}>{target.label}</option>)}</select></label>
+            <small className={styles.siteUrl}>{targetUrl}</small>
             <label>VISITOR GOAL<input required minLength={12} maxLength={180} value={liveTask} onChange={event => setLiveTask(event.target.value)} disabled={liveBusy} /></label>
             <button type="submit" disabled={liveBusy || !configured}>{liveBusy ? "Queuing…" : "Start controlled scan"}<span aria-hidden="true">↗</span></button>
           </form>

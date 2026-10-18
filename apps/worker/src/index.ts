@@ -3,7 +3,6 @@ import { auditApprovedPages } from "./audit";
 import { auditUrlsFromJourney, discoverDemoJourney, type Journey } from "./tinyfish";
 import type { AuditResult } from "./audit-types";
 
-const DEMO_HOSTS = new Set(["access-path-mu.vercel.app"]);
 
 function required(name: string): string {
   const value = process.env[name]?.trim();
@@ -76,7 +75,7 @@ async function processScan(scan: ClaimedScan): Promise<void> {
       return;
     }
     stage = "audit";
-    const report = fitReport(await auditApprovedPages(urls, tinyfishKey, DEMO_HOSTS));
+    const report = fitReport(await auditApprovedPages(urls, scan.target_url, tinyfishKey));
     stage = "saving";
     await finish(scan, "completed", journey, report, null);
     process.stdout.write(`Scan ${scan.scan_id} completed with ${report.pages.length} checked pages.\n`);

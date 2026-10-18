@@ -1,6 +1,5 @@
 const API = "https://agent.tinyfish.ai/v1";
-const DEMO_ORIGIN = "https://access-path-mu.vercel.app";
-const APPROVED_PATHS = new Set(["/demo-site", "/demo-site/", "/demo-site/support", "/demo-site/contact", "/demo-site/fixed/contact"]);
+import { approvedPageUrl, targetForStart, type ScanTarget } from "./targets";
 
 export type JourneyStep = { title: string; url: string; action: string; observation: string };
 export type Journey = { outcome: "completed" | "not_found" | "blocked"; summary: string; steps: JourneyStep[] };
@@ -26,22 +25,13 @@ function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function approvedUrl(value: unknown): string | null {
-  if (typeof value !== "string" || value.length > 2048) return null;
-  try {
-    const url = new URL(value);
-    if (url.origin !== DEMO_ORIGIN || url.username || url.password || url.search || url.hash || !APPROVED_PATHS.has(url.pathname)) return null;
-    return url.toString();
-  } catch { return null; }
-}
-
-export function parseJourney(value: unknown): Journey | null {
+export function parseJourney(value: unknown, target: ScanTarget): Journey | null {
   if (!record(value) || !["completed", "not_found", "blocked"].includes(String(value.outcome)) ||
       typeof value.summary !== "string" || !Array.isArray(value.steps) || value.steps.length > 6) return null;
   const steps: JourneyStep[] = [];
   for (const item of value.steps) {
     if (!record(item) || typeof item.title !== "string" || typeof item.action !== "string" || typeof item.observation !== "string") return null;
-    const url = approvedUrl(item.url);
+    const url = approvedPageUrl(item.url, target);
     if (!url) return null;
     steps.push({ title: item.title.slice(0, 160), url, action: item.action.slice(0, 300), observation: item.observation.slice(0, 500) });
   }
@@ -49,7 +39,8 @@ export function parseJourney(value: unknown): Journey | null {
 }
 
 export async function discoverDemoJourney(targetUrl: string, task: string, apiKey: string): Promise<Journey> {
-  if (approvedUrl(targetUrl) !== "https://access-path-mu.vercel.app/demo-site") throw new Error("Invalid controlled target");
+  const target = targetForStart(targetUrl);
+  if (!target) throw new Error("Invalid approved target");
   const start = await fetch(`${API}/automation/run-async`, {
     method: "POST", cache: "no-store", signal: AbortSignal.timeout(30_000),
     headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
@@ -57,9 +48,10 @@ export async function discoverDemoJourney(targetUrl: string, task: string, apiKe
       url: targetUrl,
       goal: [
         `Visitor goal: ${task}`,
-        "Follow the public Northstar demo site and record pages actually visited in order.",
-        "Stay on access-path-mu.vercel.app under /demo-site. Visit at most six pages.",
+        `Follow the public ${target.label} and record pages actually visited in order.`,
+        `${target.instruction} Visit at most three pages.`,
         "Do not log in, submit forms, purchase, or change any data.",
+        "If the goal cannot be completed within this public area, return not_found or blocked.",
         "Return each page's title, URL, action and a factual observation. Do not invent findings.",
       ].join("\n"),
       output_schema: outputSchema,
@@ -83,7 +75,7 @@ export async function discoverDemoJourney(targetUrl: string, task: string, apiKe
     if (!record(data) || typeof data.status !== "string") throw new Error("Invalid agent state");
     if (data.status === "FAILED" || data.status === "CANCELLED") throw new Error("Agent run did not complete");
     if (data.status === "COMPLETED") {
-      const journey = parseJourney(data.result);
+      const journey = parseJourney(data.result, target);
       if (!journey) throw new Error("Agent returned an invalid controlled journey");
       return journey;
     }

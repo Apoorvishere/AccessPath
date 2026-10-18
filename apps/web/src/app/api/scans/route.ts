@@ -1,4 +1,5 @@
 import { createServerSupabase, supabaseConfigured } from "@/lib/supabase/server";
+import { approvedScanTarget } from "@/lib/scan-targets";
 
 const json = (body: unknown, status: number) => Response.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
 
@@ -13,8 +14,6 @@ export async function GET() {
   if (error) return json({ error: "Could not load your scans." }, 500);
   return json({ scans: data }, 200);
 }
-
-const DEMO_URL = "https://access-path-mu.vercel.app/demo-site";
 
 async function readSmallJson(request: Request): Promise<unknown> {
   const reader = request.body?.getReader();
@@ -58,11 +57,12 @@ export async function POST(request: Request) {
   if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "Invalid scan request." }, 400);
   const input = body as Record<string, unknown>;
   const task = typeof input.task === "string" ? input.task.trim().replace(/\s+/g, " ") : "";
-  if (input.targetUrl !== DEMO_URL || task.length < 12 || task.length > 180 || /[\u0000-\u001f\u007f]/.test(task)) {
-    return json({ error: "Choose the controlled demo and describe one short visitor goal." }, 400);
+  const target = approvedScanTarget(input.targetUrl);
+  if (!target || task.length < 12 || task.length > 180 || /[\u0000-\u001f\u007f]/.test(task)) {
+    return json({ error: "Choose an approved public site and describe one short visitor goal." }, 400);
   }
   const { data, error } = await supabase.rpc("enqueue_live_scan", {
-    p_target_url: DEMO_URL,
+    p_target_url: target.url,
     p_task: task,
     p_idempotency_key: idempotencyKey,
   });
