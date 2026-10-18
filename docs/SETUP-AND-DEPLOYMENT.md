@@ -60,7 +60,7 @@ Never commit `.env.local`, a TinyFish key, a Supabase secret key, a browser CDP 
 
 ### Web app, local and Vercel
 
-Create `apps/web/.env.local` for local use. The root `.env.example` lists the two public Supabase values; `apps/web/.env.example` lists private preview values. Actual names used by the current code are:
+Create `apps/web/.env.local` for local use. The root `.env.example` lists the two public Supabase values. The private preview values are documented below; there is no separate `apps/web/.env.example`. Actual names used by the current code are:
 
 | Variable | Scope and purpose |
 | --- | --- |

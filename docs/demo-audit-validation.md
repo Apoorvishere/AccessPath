@@ -32,4 +32,4 @@ This consumes one TinyFish Browser API session. Results are written to ignored `
 - Zero automated violations on the corrected page does not prove WCAG conformance.
 - One check on each page was marked for human review; the current summarized JSON records only the count, not its rule ID.
 - The demo report is a dated snapshot of a controlled site. It is not a general site-scanning feature.
-- The private journey studio and the browser audit are separate stages today. Identity, quotas, job persistence, and result ownership are still required before opening paid scans to general users.
+- This local comparison script is separate from the invite-only live queue. The live queue now has sign-in, saved owner-scoped reports, and shared attempt limits; it is still restricted to approved targets and has not been opened to general users. Do not present the local original/fixed comparison as the output of one queued live scan.

@@ -133,8 +133,8 @@ An excluded capability can appear in a roadmap only if labeled clearly as future
 
 - [ ] Pin the exact Git commit deployed on Vercel and Railway; make the deck screenshots match it.
 - [ ] Open the signed-in Northstar report and the public original/fixed report; note which evidence comes from which run.
-- [ ] Correct the current [README](../README.md) passages that still say the live queue accepts only Northstar, although code now offers Northstar and GitHub.
-- [ ] Update [demo-audit-validation.md](./demo-audit-validation.md) where its old status note says multi-user queue ownership was still future work; preserve its description of the separate local browser audit.
+- [x] Correct the [README](../README.md) passages to describe both approved live targets.
+- [x] Update [demo-audit-validation.md](./demo-audit-validation.md) to distinguish its separate local browser audit from the implemented invite-only queue.
 - [ ] Compare every quoted count, URL, rule, page limit and status in the deck and demo video with its dated source.
 - [ ] Remove unsupported claims of two defects, five pages, private Storage, partial-report recovery, CI, alerting or arbitrary-site scans from all presentation material.
 - [ ] Capture the team's two-account test steps and one final successful live-report screenshot with private details hidden.

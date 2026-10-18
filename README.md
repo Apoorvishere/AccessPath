@@ -42,16 +42,16 @@ A single URL check can miss the context of a task such as finding help or reachi
 - TinyFish Web Agent route discovery for the controlled site.
 - A verified audit performed in a TinyFish Browser session with Playwright and axe-core. The [saved demo report](https://access-path-mu.vercel.app/reports/demo) shows the `label` rule finding and screenshots of the original and corrected pages.
 - Supabase sign-in and owner-only saved reports, including import of a previously exported audit JSON file.
-- An invite-only live scan queue with account and global limits, a paused switch, and a Railway worker. An end-to-end run completed on the approved demo and opened as a saved report. The verified demo report remains available independently.
+- An invite-only live scan queue with one active scan per account, shared attempt limits, a paused switch, and a Railway worker. The team has opened completed saved reports for both approved targets. The verified demo report remains available independently.
 
-The live queue currently accepts only `https://access-path-mu.vercel.app/demo-site`. It does not scan arbitrary websites. It permits one active scan per account and a bounded number of paid preview attempts. It does not log in, submit forms, or change a target site.
+The live queue accepts two exact starting URLs: the [Northstar demo](https://access-path-mu.vercel.app/demo-site) and the [public AccessPath GitHub repository](https://github.com/Apoorvishere/AccessPath). Users can write a visitor goal for either target. It does not scan arbitrary websites, log in, submit forms, or change a target site. The worker audits at most three approved visited pages. GitHub's pages and results can change, so the Northstar fixture remains the reproducible demonstration.
 
 ## Demo in two minutes
 
 1. Open the [controlled demo](https://access-path-mu.vercel.app/demo-site) and follow **Home → Support → Contact**.
 2. Open the [verified audit report](https://access-path-mu.vercel.app/reports/demo). Inspect the `label` finding on the contact form and its screenshot.
 3. Open the [corrected contact page](https://access-path-mu.vercel.app/demo-site/fixed/contact) to see the associated label.
-4. If live scans are enabled for your account, sign in to the [dashboard](https://access-path-mu.vercel.app/dashboard) to view owner-only saved evidence. The live scan button is an invite-only preview and uses TinyFish credits.
+4. If live scans are enabled for your account, sign in to the [dashboard](https://access-path-mu.vercel.app/dashboard) to view owner-only saved evidence. Invited users may choose the Northstar demo or the public AccessPath GitHub repository and enter a visitor goal. A new live run uses TinyFish credits.
 
 ## How it works
 
@@ -74,7 +74,7 @@ flowchart LR
   G --> H
 ```
 
-The worker limits the live preview to the approved Northstar host and at most three pages. It does not authenticate to the target site, submit its forms, or make purchases. A paused queue switch and account limits control paid runs.
+The worker confines each scan to its selected approved target and checks at most three visited pages. It does not authenticate to the target site, submit its forms, or make purchases. A paused queue switch, one-active-scan rule, and shared attempt limits control paid runs.
 
 ## Local setup
 
@@ -88,7 +88,7 @@ pnpm dev
 
 Open `http://localhost:3000`. The public landing page and local demo do not require keys. For sign-in, put the names from the root `.env.example` in `apps/web/.env.local` using your own Supabase project URL and publishable key. The local environment file is ignored by Git.
 
-The private journey preview and audit routes also need the server-only values described in `apps/web/.env.example`. Keep `TINYFISH_API_KEY` and preview codes out of `NEXT_PUBLIC_*` variables. Never commit credentials or audit exports.
+The private journey preview and audit routes need additional server-only values listed in the [setup guide](docs/SETUP-AND-DEPLOYMENT.md#4-environment-variables). Keep `TINYFISH_API_KEY` and preview codes out of `NEXT_PUBLIC_*` variables. Never commit credentials or private audit exports.
 
 To create your own database, run the migrations in order from `supabase/migrations/` in a fresh Supabase project. The second migration creates the live queue in the **paused** state. The third migration excludes never-started cancelled jobs from paid-scan limits. The fourth allows a second paid diagnostic attempt in one UTC day; it does not enable the queue. Configure the worker separately with `SUPABASE_URL`, a Supabase `sb_secret_` key, `TINYFISH_API_KEY`, and `ACCESSPATH_WORKER_ENABLED=true`. Do not place the secret key in the web app.
 
@@ -100,11 +100,11 @@ pnpm --filter @accesspath/worker check
 pnpm --filter @accesspath/worker test
 ```
 
-The controlled fixture and the verified audit method are documented in [demo fixture](docs/demo-fixture.md) and [audit validation](docs/demo-audit-validation.md). Those notes distinguish recorded evidence from proposed capabilities.
+Start with the [documentation index](docs/README.md) for the architecture, pipeline, data model, security, deployment, demo, and evidence notes. The [controlled fixture](docs/demo-fixture.md) and [verified audit method](docs/demo-audit-validation.md) distinguish recorded evidence from proposed capabilities.
 
 ## Scope and limitations
 
-- The live queue is an invite-only, controlled preview for the Northstar demo. Arbitrary-site scans are future work.
+- The live queue is an invite-only preview for two exact approved starts: the Northstar demo and the public AccessPath GitHub repository. Arbitrary-site scans are future work.
 - Automated rule counts are not a count of every accessibility barrier or a WCAG conformance score.
 - A person still needs to verify findings in context and test keyboard use, screen readers, focus order, and task completion.
 - The landing-page journey preview is illustrative; the saved scan report is the record of a real run.
