@@ -1,10 +1,18 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import type { AuditResult } from "@/lib/audit-types";
 import type { JourneyResult, JourneyRun } from "@/lib/journey-types";
 import styles from "./page.module.css";
 
 type ViewState = "idle" | "submitting" | "running" | "complete" | "error";
+type AuditState = "idle" | "running" | "complete" | "error";
+
+const demoRoute = [
+  "https://access-path-mu.vercel.app/demo-site",
+  "https://access-path-mu.vercel.app/demo-site/support",
+  "https://access-path-mu.vercel.app/demo-site/contact",
+];
 
 export default function NewJourneyPage() {
   const [url, setUrl] = useState("");
@@ -14,7 +22,12 @@ export default function NewJourneyPage() {
   const [runId, setRunId] = useState<string | null>(null);
   const [result, setResult] = useState<JourneyResult | null>(null);
   const [error, setError] = useState("");
-  const busy = viewState === "submitting" || viewState === "running";
+  const [auditState, setAuditState] = useState<AuditState>("idle");
+  const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
+  const [auditError, setAuditError] = useState("");
+  const [reportError, setReportError] = useState("");
+  const busy = viewState === "submitting" || viewState === "running" || auditState === "running";
+  const showAudit = process.env.NODE_ENV === "development";
 
   useEffect(() => {
     if (!runId) return;
@@ -86,6 +99,59 @@ export default function NewJourneyPage() {
     setResult(null);
     setError("");
     setViewState("idle");
+    setAuditState("idle");
+    setAuditResult(null);
+    setAuditError("");
+    setReportError("");
+  }
+
+  async function auditJourney() {
+    if (busy || auditState === "complete") return;
+    if (!accessCode) {
+      setAuditError("Enter the private preview code above before starting the audit.");
+      setAuditState("error");
+      return;
+    }
+    const urls = result?.outcome === "completed" && result.steps.length > 0
+      ? result.steps.slice(0, 3).map((step) => step.url)
+      : demoRoute;
+    setAuditError("");
+    setAuditResult(null);
+    setAuditState("running");
+    try {
+      const response = await fetch("/api/audits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-accesspath-demo-code": accessCode },
+        body: JSON.stringify({ urls }),
+      });
+      const data: AuditResult & { error?: string } = await response.json();
+      if (!response.ok || !Array.isArray(data.pages)) throw new Error(data.error || "The audit could not finish.");
+      setAuditResult(data);
+      setAuditState("complete");
+    } catch (cause) {
+      setAuditError(cause instanceof Error ? cause.message : "The audit could not finish.");
+      setAuditState("error");
+    }
+  }
+
+  function downloadAudit() {
+    if (!auditResult) return;
+    const file = new Blob([JSON.stringify(auditResult, null, 2)], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(file);
+    link.download = `accesspath-audit-${auditResult.checkedAt.slice(0, 10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
+  function openReport() {
+    if (!auditResult) return;
+    try {
+      sessionStorage.setItem("accesspath:local-audit-report", JSON.stringify(auditResult));
+      window.location.assign("/reports/local");
+    } catch {
+      setReportError("Could not open the report from this tab. Download the audit JSON, then import it at /reports/local.");
+    }
   }
 
   return (
@@ -114,7 +180,7 @@ export default function NewJourneyPage() {
             <span>02 <b>AUDIT</b></span>
             <span>03 <b>REPORT</b></span>
           </div>
-          <p className={styles.scope}>This first stage records the journey. Accessibility findings and screenshots will follow in the audit stage.</p>
+          <p className={styles.scope}>Discover a route, then run bounded accessibility checks on the approved Northstar demo. Automated findings still need human review.</p>
         </section>
 
         <section className={styles.workspace} aria-label="Create a journey">
@@ -167,11 +233,51 @@ export default function NewJourneyPage() {
                     </li>
                   ))}
                 </ol>
-                <p className={styles.resultNote}>Live journey discovery only. No accessibility audit has been run yet.</p>
+                <p className={styles.resultNote}>Live journey discovery is complete. Run the separate audit below to check these pages.</p>
                 <button className={styles.another} type="button" onClick={reset}>Explore another journey ↗</button>
               </div>
             )}
           </div>
+          {showAudit && <section className={styles.auditPanel} aria-labelledby="audit-title">
+            <div className={styles.auditEyebrow}>02 / AUDIT THE ROUTE</div>
+            <h2 id="audit-title">See what the pages reveal.</h2>
+            <p>Runs axe-core in one TinyFish Browser session across up to three approved pages. This paid preview checks the completed route, or the same demo route directly if you have not run discovery in this tab.</p>
+            <button className={styles.auditButton} type="button" onClick={auditJourney} disabled={busy || auditState === "complete"}>
+              <span>{auditState === "running" ? "Auditing the pages…" : auditState === "complete" ? "Audit complete" : result?.outcome === "completed" ? "Audit this journey" : "Audit the controlled demo"}</span>
+              <span aria-hidden="true">↗</span>
+            </button>
+            {auditState === "error" && <p className={styles.auditError} role="alert">{auditError}</p>}
+            {auditState === "running" && <p className={styles.auditStatus} role="status">Checking the pages and collecting evidence. Keep this tab open for up to three minutes.</p>}
+            {auditState === "complete" && auditResult && (
+              <div className={styles.auditReport}>
+                <p className={styles.auditMeta}>CHECKED {new Date(auditResult.checkedAt).toLocaleString()} / {auditResult.pages.length} PAGES</p>
+                {auditResult.pages.map((page, index) => (
+                  <article className={styles.auditPage} key={page.url}>
+                    <div className={styles.auditPageHead}><span>{String(index + 1).padStart(2, "0")}</span><h3>{page.title || "Audited page"}</h3></div>
+                    <p className={styles.auditUrl}>{page.url}</p>
+                    <p className={styles.auditCount}>{page.violations.length} rules with violations <span>·</span> {page.needsReviewCount} rules needing review</p>
+                    {page.screenshot && <img className={styles.auditScreenshot} src={page.screenshot} alt={`Captured viewport of ${page.title || page.url}`} />}
+                    {page.violations.length > 0 ? (
+                      <ul className={styles.auditViolations}>{page.violations.map((finding) => (
+                        <li key={finding.id}>
+                          <strong>{finding.help}</strong>
+                          <span>{finding.impact || "unclassified"} / {finding.affectedCount} affected element{finding.affectedCount === 1 ? "" : "s"}</span>
+                          {finding.selectors.length > 0 && <code>{finding.selectors.join(", ")}</code>}
+                          {finding.helpUrl && <a href={finding.helpUrl} target="_blank" rel="noopener noreferrer">Rule guidance ↗</a>}
+                        </li>
+                      ))}</ul>
+                    ) : <p className={styles.auditClear}>No automated violations were detected for the selected WCAG rules on this page.</p>}
+                  </article>
+                ))}
+                <p className={styles.auditNote}>{auditResult.note}</p>
+                <div className={styles.auditActions}>
+                  <button className={styles.auditDownload} type="button" onClick={openReport}>Open printable report ↗</button>
+                  <button className={styles.auditDownload} type="button" onClick={downloadAudit}>Download audit JSON ↗</button>
+                </div>
+                {reportError && <p className={styles.auditError} role="alert">{reportError}</p>}
+              </div>
+            )}
+          </section>}
           <div className={styles.workspaceFoot}><span>ACCESSPATH / JOURNEY DISCOVERY</span><span>PRIVATE DEMO BUILD</span></div>
         </section>
       </div>

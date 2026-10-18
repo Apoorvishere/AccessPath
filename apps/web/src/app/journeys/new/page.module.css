@@ -95,6 +95,35 @@
 .steps li .observation { margin-top: 6px; color: #52636b; }
 .resultNote { margin: 20px 20px 0; color: #52636b; line-height: 1.6; }
 .another { margin: 20px 20px 25px; }
+.auditPanel { margin: 0 clamp(25px, 5vw, 82px) 70px; padding: 30px; border: 1px solid #738897; background: #e4edf4; }
+.auditEyebrow, .auditMeta, .auditPageHead > span { font: 500 10px var(--font-mono), monospace; letter-spacing: .07em; }
+.auditEyebrow { color: #536a78; }
+.auditPanel h2 { margin: 13px 0 12px; font: 650 clamp(25px, 2.5vw, 36px)/1.1 var(--font-display), Arial, sans-serif; letter-spacing: -.06em; }
+.auditPanel > p { max-width: 670px; margin: 0; color: #43545d; font-size: 12px; line-height: 1.7; }
+.auditButton { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 25px; padding: 17px 19px; border: 1px solid var(--ink); background: var(--ink); color: #fff; text-align: left; font-size: 12px; font-weight: 800; cursor: pointer; transition: transform .2s, background .2s; }
+.auditButton:hover:not(:disabled) { transform: translateY(-3px); background: #44545b; }
+.auditButton:disabled { opacity: .6; cursor: default; }
+.auditPanel .auditError { margin-top: 14px; color: #8d2c25; font-weight: 700; }
+.auditPanel .auditStatus { margin-top: 14px; }
+.auditReport { margin-top: 27px; border-top: 1px solid #9eafbc; }
+.auditMeta { margin: 16px 0; color: #536a78; }
+.auditPage { padding: 22px 0; border-top: 1px solid #b7c7d1; }
+.auditPageHead { display: flex; align-items: baseline; gap: 15px; }
+.auditPageHead h3 { margin: 0; font: 650 22px var(--font-display), Arial, sans-serif; letter-spacing: -.04em; }
+.auditUrl { overflow-wrap: anywhere; margin: 6px 0 14px 29px; color: #536a78; font: 500 10px var(--font-mono), monospace; }
+.auditCount { margin: 0 0 15px 29px; font-size: 12px; font-weight: 700; }
+.auditCount span { margin: 0 6px; color: #71838e; }
+.auditScreenshot { display: block; width: min(100%, 580px); margin: 0 0 18px 29px; border: 1px solid #a1b2bc; }
+.auditViolations { display: grid; gap: 8px; margin: 0 0 0 29px; padding: 0; list-style: none; }
+.auditViolations li { display: grid; gap: 5px; padding: 13px; border-left: 3px solid #ba6944; background: #f1e9e2; font-size: 11px; }
+.auditViolations li strong { font-size: 13px; }
+.auditViolations li code { overflow-wrap: anywhere; font: 500 10px var(--font-mono), monospace; }
+.auditViolations li a { width: fit-content; text-decoration: underline; }
+.auditClear { margin: 0 0 0 29px; font-size: 12px; }
+.auditNote { margin: 18px 0 0; color: #536a78; font-size: 11px; line-height: 1.6; }
+.auditActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.auditDownload { margin-top: 19px; padding: 12px 14px; border: 1px solid var(--ink); background: transparent; color: var(--ink); font-size: 11px; font-weight: 800; cursor: pointer; transition: background .2s, color .2s; }
+.auditDownload:hover { background: var(--ink); color: #fff; }
 .workspaceFoot { min-height: 55px; border-top: 1px solid #9eafbc; border-bottom: 0; color: #52636b; }
 
 @keyframes pulse { 50% { opacity: .25; transform: scale(.6); } }
@@ -119,6 +148,8 @@
   .form { padding: 48px 20px 40px; }
   .formIntro h2 { font-size: 38px; }
   .result { margin-inline: 20px; }
+  .auditPanel { margin-inline: 20px; padding: 20px; }
+  .auditScreenshot, .auditUrl, .auditCount, .auditViolations, .auditClear { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
