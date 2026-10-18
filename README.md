@@ -46,7 +46,7 @@ A single URL check can miss the context of a task such as finding help or reachi
 
 The live queue accepts two exact starting URLs: the [Northstar demo](https://access-path-mu.vercel.app/demo-site) and the [public AccessPath GitHub repository](https://github.com/Apoorvishere/AccessPath). Users can write a visitor goal for either target. It does not scan arbitrary websites, log in, submit forms, or change a target site. The worker audits at most three approved visited pages. GitHub's pages and results can change, so the Northstar fixture remains the reproducible demonstration.
 
-## Demo in two minutes
+## Demo in minutes
 
 Watch the [AccessPath demo video](docs/assets/accesspath-demo.mp4).
 
