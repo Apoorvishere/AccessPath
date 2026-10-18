@@ -22,9 +22,20 @@ process.once("SIGTERM", () => { stopping = true; });
 
 type ClaimedScan = { scan_id: string; target_url: string; task: string };
 
+function diagnostic(message: string): string {
+  return message
+    .replace(/sb_secret_[A-Za-z0-9_-]+/g, "[redacted]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
+    .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[redacted]")
+    .slice(0, 240);
+}
+
 async function claim(): Promise<ClaimedScan | null> {
   const { data, error } = await supabase.rpc("claim_live_scan");
-  if (error) throw new Error("Database queue claim failed");
+  if (error) {
+    process.stderr.write(`Queue claim error ${error.code ?? "unknown"}: ${diagnostic(error.message)}\n`);
+    throw new Error("Database queue claim failed");
+  }
   if (!Array.isArray(data) || data.length === 0) return null;
   const scan = data[0] as Partial<ClaimedScan>;
   if (typeof scan.scan_id !== "string" || typeof scan.target_url !== "string" || typeof scan.task !== "string") {
@@ -81,8 +92,9 @@ while (!stopping) {
     const scan = await claim();
     if (scan) await processScan(scan);
     else await new Promise(resolve => setTimeout(resolve, 10_000));
-  } catch {
-    process.stderr.write("Queue polling failed; retrying without claiming a paid run.\n");
+  } catch (error) {
+    const reason = error instanceof Error ? diagnostic(error.message) : "unknown error";
+    process.stderr.write(`Queue polling failed (${reason}); retrying without claiming a paid run.\n`);
     await new Promise(resolve => setTimeout(resolve, 20_000));
   }
 }
