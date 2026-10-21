@@ -75,7 +75,8 @@ The URLs and code paths above should be checked against the final submission com
 | C-18 | Hostile-content and prompt-injection fixtures were tested end to end. | Planned | No recorded fixture or test result found. The UI renders report strings as React text; that narrower source observation is code-backed. |
 | C-19 | Alerts cover queue age, errors, browser sessions and spend. | Planned | No alert configuration evidence found. Manual Railway/Supabase/TinyFish monitoring was used during development. |
 | C-20 | The web app, worker and database produced a completed live production report. | Team-reported + Observed report | E-03, Vercel URL and Railway status reported by the team. Capture final deployment IDs or dated screenshots before submission. |
-| C-21 | A CI workflow runs checks and builds on every push. | Planned | No GitHub Actions workflow found. Local web build and worker checks were run; do not relabel them CI. |
+| C-21 | A GitHub Actions workflow runs web lint/build and worker TypeScript checks on pushes and pull requests. | Implemented in source | `.github/workflows/checks.yml`; its hosted result remains unverified until the workflow runs on GitHub. It does not run the worker test script. |
+| C-23 | Users can compare two saved reports on page URLs common to both and see rule/page findings as no longer detected, still detected, or newly detected. | Implemented in source | Dashboard selection plus `/reports/compare`; matching uses URL and axe rule ID. It is evidence comparison, not fix validation or WCAG conformance. |
 | C-22 | The app has responsive styles and visible text states. | Code-backed | E-08. A full keyboard, screen-reader, contrast and zoom pass is not documented; do not claim WCAG conformance of AccessPath itself. |
 
 ## 6. Descriptive claims that must remain precise
@@ -151,6 +152,7 @@ This checklist identifies final work; an unchecked line is not a failure of the 
 | --- | --- | --- |
 | 17 October 2026 | Planning baseline. | Original project direction. |
 | 18 October 2026 | Reconciled with implemented web/worker/database code, controlled audit record, and team-reported live scans and privacy check. Retired claims that no longer match the prototype. | E-01 through E-08; final deployment and submission details remain to verify. |
+| 21 October 2026 | Added saved-report comparison, safe scan-failure summaries, and a GitHub Actions lint/build/type-check workflow. | Source changes; deployment and hosted workflow result still require verification. |
 
 ## 12. References
 

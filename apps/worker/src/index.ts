@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { auditApprovedPages } from "./audit";
-import { auditUrlsFromJourney, discoverDemoJourney, type Journey } from "./tinyfish";
+import { auditUrlsFromJourney, discoverDemoJourney, repeatedJourneyStep, type Journey } from "./tinyfish";
 import type { AuditResult } from "./audit-types";
 
 
@@ -68,6 +68,12 @@ async function processScan(scan: ClaimedScan): Promise<void> {
   let journey: Journey | null = null;
   try {
     journey = await discoverDemoJourney(scan.target_url, scan.task, tinyfishKey);
+    const repeated = repeatedJourneyStep(journey);
+    if (repeated) {
+      await finish(scan, "failed", journey, null, "journey_loop");
+      process.stdout.write(`Scan ${scan.scan_id} flagged a repeated journey step at positions ${repeated.first + 1} and ${repeated.repeated + 1}.\n`);
+      return;
+    }
     const urls = auditUrlsFromJourney(journey);
     if (urls.length === 0) {
       await finish(scan, "failed", journey, null, journey.outcome === "blocked" ? "journey_blocked" : "goal_not_found");

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { auditUrlsFromJourney, parseJourney } from "./tinyfish";
+import { auditUrlsFromJourney, parseJourney, repeatedJourneyStep } from "./tinyfish";
 import { targetForStart, NORTHSTAR_START, GITHUB_START, WIKIPEDIA_START } from "./targets";
 
 const northstar = targetForStart(NORTHSTAR_START)!;
@@ -29,6 +29,16 @@ test("uncompleted journeys never produce paid audit targets", () => {
   const journey = parseJourney({ ...base, outcome: "blocked" }, northstar);
   assert.ok(journey);
   assert.deepEqual(auditUrlsFromJourney(journey), []);
+});
+
+test("a repeated page and action is flagged, while a different action on the same page is allowed", () => {
+  const repeated = parseJourney({ ...base, steps: [base.steps[0], base.steps[1], { ...base.steps[0], action: "  OPEN  " }] }, northstar);
+  assert.ok(repeated);
+  assert.deepEqual(repeatedJourneyStep(repeated), { first: 0, repeated: 2 });
+
+  const revisit = parseJourney({ ...base, steps: [base.steps[0], { ...base.steps[0], action: "Follow support link" }] }, northstar);
+  assert.ok(revisit);
+  assert.equal(repeatedJourneyStep(revisit), null);
 });
 
 test("public GitHub audit stays inside the owned repository", () => {

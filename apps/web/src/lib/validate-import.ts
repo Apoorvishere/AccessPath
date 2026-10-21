@@ -39,6 +39,29 @@ export function validateImportedAudit(value: unknown): AuditResult | null {
     if (screenshot !== null &&
         (typeof screenshot !== "string" || screenshot.length > 500_000 ||
          !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(screenshot))) return null;
+    let metadata: AuditPage["metadata"];
+    if (rawPage.metadata !== undefined) {
+      if (!record(rawPage.metadata)) return null;
+      const raw = rawPage.metadata;
+      const description = raw.description === null ? null : text(raw.description, 300);
+      const language = raw.language === null ? null : text(raw.language, 40);
+      const canonicalUrl = raw.canonicalUrl === null ? null : approvedPage(raw.canonicalUrl);
+      const robots = raw.robots === null ? null : text(raw.robots, 100);
+      if (description === null && raw.description !== null || language === null && raw.language !== null ||
+          canonicalUrl === null && raw.canonicalUrl !== null || robots === null && raw.robots !== null ||
+          !Array.isArray(raw.headings) || raw.headings.length > 12 ||
+          !raw.headings.every(item => typeof item === "string" && item.length <= 120) ||
+          !Array.isArray(raw.approvedLinks) || raw.approvedLinks.length > 12) return null;
+      const approvedLinks: { url: string; label: string }[] = [];
+      for (const item of raw.approvedLinks) {
+        if (!record(item) || typeof item.label !== "string" || item.label.length > 100) return null;
+        const linkUrl = approvedPage(item.url);
+        if (!linkUrl) return null;
+        approvedLinks.push({ url: linkUrl, label: item.label });
+      }
+      metadata = { description, language, canonicalUrl, robots,
+        headings: raw.headings as string[], approvedLinks };
+    }
     const violations: AuditViolation[] = [];
     for (const rawFinding of rawPage.violations) {
       if (!record(rawFinding)) return null;
@@ -54,7 +77,8 @@ export function validateImportedAudit(value: unknown): AuditResult | null {
       violations.push({ id, help, helpUrl, impact, affectedCount: rawFinding.affectedCount as number, selectors: rawFinding.selectors as string[] });
     }
     pages.push({ url, title, violations, needsReviewCount: rawPage.needsReviewCount as number,
-      passedRuleCount: rawPage.passedRuleCount as number, screenshot: screenshot as string | null });
+      passedRuleCount: rawPage.passedRuleCount as number, screenshot: screenshot as string | null,
+      ...(metadata ? { metadata } : {}) });
   }
   if (new Set(pages.map(page => page.url)).size !== pages.length) return null;
   return { checkedAt: value.checkedAt, pages, note };

@@ -2,6 +2,7 @@ import { createServerSupabase, supabaseConfigured } from "@/lib/supabase/server"
 import { approvedScanTarget } from "@/lib/scan-targets";
 
 const json = (body: unknown, status: number) => Response.json(body, { status, headers: { "Cache-Control": "private, no-store" } });
+const publicFailureCodes = new Set(["journey_blocked", "journey_loop", "goal_not_found", "journey_failed", "audit_failed", "saving_failed"]);
 
 export async function GET() {
   if (!supabaseConfigured()) return json({ error: "Workspace is not configured." }, 503);
@@ -9,10 +10,14 @@ export async function GET() {
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims?.claims?.sub) return json({ error: "Sign in to view your scans." }, 401);
   const { data, error } = await supabase.from("scans")
-    .select("id,source,target_url,task,status,created_at,finished_at")
+    .select("id,source,target_url,task,status,failure_code,created_at,finished_at")
     .order("created_at", { ascending: false }).limit(30);
   if (error) return json({ error: "Could not load your scans." }, 500);
-  return json({ scans: data }, 200);
+  const scans = data.map(scan => ({
+    ...scan,
+    failure_code: typeof scan.failure_code === "string" && publicFailureCodes.has(scan.failure_code) ? scan.failure_code : null,
+  }));
+  return json({ scans }, 200);
 }
 
 async function readSmallJson(request: Request): Promise<unknown> {

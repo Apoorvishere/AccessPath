@@ -19,6 +19,8 @@ Status: implemented in code; live result not yet verified.
 5. If the live queue is paused, enable it only for the authorized test. Sign in, choose **Wikipedia accessibility articles**, and run the example goal once.
 6. Check that the saved journey lists the two approved articles and that the report shows both pages checked. Report actual findings and any failed or unvisited pages, not an expected count of violations.
 
+**Deployment check:** Applying the SQL migration updates Supabase only; it does not update the Railway worker. Compare Railway's active deployment commit with the latest GitHub commit. If Railway paused a build, trigger **Deploy Latest Commit** after builds resume, then confirm the new deployment is active and logs `AccessPath controlled-scan worker started.` Do not start a second worker against the same queue. Leave the Wikipedia web flag off until the worker code is deployed.
+
 If the test cannot complete, set `NEXT_PUBLIC_WIKIPEDIA_SCAN_ENABLED=false` and redeploy the web app. The existing Northstar and GitHub targets are unaffected.
 
 ## Claim boundary

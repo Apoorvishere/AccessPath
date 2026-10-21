@@ -10,9 +10,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims?.claims?.sub) return json({ error: "Sign in to view this scan." }, 401);
   const { data, error } = await supabase.from("scans")
-    .select("id,source,target_url,task,status,report,journey,created_at,finished_at")
+    .select("id,source,target_url,task,status,failure_code,report,journey,created_at,finished_at")
     .eq("id", id).maybeSingle();
   if (error) return json({ error: "Could not load this scan." }, 500);
   if (!data) return json({ error: "Scan not found." }, 404);
-  return json({ scan: data }, 200);
+  return json({ scan: { ...data, failure_code: data.failure_code === "journey_loop" ? "journey_loop" : null } }, 200);
 }

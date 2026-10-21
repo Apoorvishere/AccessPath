@@ -43,6 +43,8 @@ A single URL check can miss the context of a task such as finding help or reachi
 - A verified audit performed in a TinyFish Browser session with Playwright and axe-core. The [saved demo report](https://access-path-mu.vercel.app/reports/demo) shows the `label` rule finding and screenshots of the original and corrected pages.
 - Supabase sign-in and owner-only saved reports, including import of a previously exported audit JSON file.
 - An invite-only live scan queue with one active scan per account, shared attempt limits, a paused switch, and a Railway worker. The team has opened completed saved reports for both approved targets. The verified demo report remains available independently.
+- The private workspace explains known scan failure stages in plain language and suggests a safe next step without exposing raw worker exceptions or silently retrying paid work.
+- Compare two saved reports on matching page URLs to see which axe rules were no longer detected, remained, or appeared in the later run. This comparison does not start another scan; a person still verifies the result.
 
 The live queue accepts two exact starting URLs: the [Northstar demo](https://access-path-mu.vercel.app/demo-site) and the [public AccessPath GitHub repository](https://github.com/Apoorvishere/AccessPath). Users can write a visitor goal for either target. It does not scan arbitrary websites, log in, submit forms, or change a target site. The worker audits at most three approved visited pages. GitHub's pages and results can change, so the Northstar fixture remains the reproducible demonstration.
 

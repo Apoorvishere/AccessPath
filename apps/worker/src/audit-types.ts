@@ -10,6 +10,14 @@ export type AuditViolation = {
 export type AuditPage = {
   url: string;
   title: string;
+  metadata?: {
+    description: string | null;
+    language: string | null;
+    canonicalUrl: string | null;
+    robots: string | null;
+    headings: string[];
+    approvedLinks: { url: string; label: string }[];
+  };
   violations: AuditViolation[];
   needsReviewCount: number;
   passedRuleCount: number;

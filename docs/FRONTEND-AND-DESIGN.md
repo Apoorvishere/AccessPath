@@ -18,9 +18,10 @@ The report uses concrete evidence rather than an aggregate accessibility score. 
 | --- | --- |
 | Evidence first | The saved report groups journey steps, checked pages, violations, affected elements, screenshot captures and human-review prompts. |
 | Bounded scope | The live form offers two approved sites and a free-text goal; it does not take arbitrary public URLs. |
-| State in words | The dashboard lists `queued`, `running`, `completed` and `failed` with text such as WAITING, IN PROGRESS and NO REPORT. |
+| State in words | The dashboard lists queued/running/completed/failed states and shows a safe, plain-language summary for known failure stages. |
 | Honest claims | The report distinguishes detected rules from page-level checks needing review and has no compliance score. |
 | Owner context | Saved scans appear in the signed-in workspace; the report fetches the selected owner's record through the API. |
+| Change review | A user can select two saved reports and compare axe rule findings on matching page URLs without starting another scan. |
 
 The visual style is editorial: large headings, numbered sections, clear dividers and plain status text. Motion on the landing page supports the presentation but does not carry the scan result.
 
@@ -66,9 +67,11 @@ The list refreshes approximately every eight seconds while it contains a queued 
 | `running` | IN PROGRESS | No report yet. |
 | `completed` | Completion status and Open report link. | Yes. |
 | `partial` | Open report link if such a record exists. | Yes; current live worker does not create partial results. |
-| `failed` / other | NO REPORT. | No. |
+| `failed` / cancelled | Failure or cancellation label plus a bounded explanation for known worker failure codes. | No. |
 
-The current UI does not show fine-grained stages such as “starting browser” or “auditing page 2,” a countdown, cancellation, a retry button, or a reset time for every quota error. The worker marks audit-stage failures as failed without saving a partial audit report. A pause switch stops new claims; it is an operator control, not an in-page button.
+Completed/partial saved reports can be selected in order as Before and After. `/reports/compare` loads both through the owner-scoped scan API, matches only pages present in both reports, and classifies rule/page pairs as no longer detected, still detected, or newly detected. If the task, target or page count differs, the report warns that the comparison is partial. It does not claim a fix is complete or WCAG conformance, and it does not start a scan.
+
+The current UI does not show fine-grained stages such as “starting browser” or “auditing page 2,” a countdown, cancellation, a retry button, or a reset time for every quota error. Known failures explain what the user can check next; a saving failure warns the operator to check provider activity before retrying. The worker marks audit-stage failures as failed without saving a partial audit report. A pause switch stops new claims; it is an operator control, not an in-page button.
 
 The dashboard also imports an AccessPath audit JSON file of less than 800 KB. That path saves prior evidence and does not run TinyFish or consume new API credits. Keep it distinct from a newly queued live scan in demonstrations.
 
@@ -96,7 +99,7 @@ The public `/reports/demo` is a separate dated Northstar comparison and must not
 | Loading list | “Loading your reports…” appears in text. | Verify announcements with a screen reader. |
 | No saved scans | The library shows an empty-state message. | Point the user to either import or a live scan, depending on enabled features. |
 | Request error | The dashboard shows an error message. | Preserve context and offer a clear retry action. |
-| Failed scan | The list says NO REPORT. | Add a safe, useful failure summary and a guided retry path. |
+| Failed scan | The list explains known failure stages with a bounded next step; unknown reasons stay generic. | A guided operator retry path remains future work. |
 | Missing screenshot | The report displays a text placeholder. | Explain why an image is absent, where known. |
 | Narrow screen | CSS Modules include phone/tablet breakpoints for dashboard and report; report captures collapse to one column. | Verify high zoom, reflow and horizontal overflow manually. |
 

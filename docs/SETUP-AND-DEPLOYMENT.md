@@ -89,7 +89,7 @@ Keep worker secrets in Railway service variables, not in GitHub or Vercel public
 
 The repository contains eight dated SQL files in `supabase/migrations/`, from `202610180001_saved_scans.sql` through `202610180008_browser_csp_retry_budget.sql`. Apply them **in filename order once to a fresh project** through the Supabase SQL Editor, reviewing each before running it. Some migrations create tables and functions without `IF NOT EXISTS`; rerunning the full sequence on an already migrated database can fail with “relation already exists.” Do not treat that error as proof that the entire migration sequence succeeded.
 
-The first migration creates the owner-scoped `scans` table, RLS policy and import function. The second adds journey/failure fields, the live queue, an invitation table and a paused switch. Subsequent migrations adjust cancellation accounting, approved GitHub target and preview budgets. Several migrations explicitly leave `live_scan_limits.enabled = false`; enabling the queue is a separate operator decision after deployment and cost checks.
+The first migration creates the owner-scoped `scans` table, RLS policy and import function. The second adds journey/failure fields, the live queue, an invitation table and a paused switch. Subsequent migrations adjust cancellation accounting, approved GitHub target and preview budgets; `202610200001_wikipedia_target.sql` adds the Wikipedia start while preserving the current queue switch and budgets. Applying a migration changes Supabase only; it does not deploy the Railway worker or Vercel app. Several migrations explicitly leave `live_scan_limits.enabled = false`; enabling the queue is a separate operator decision after deployment and cost checks.
 
 After applying the migrations, verify without sharing secrets:
 
@@ -133,7 +133,7 @@ pnpm --filter @accesspath/worker test
 
 Also perform a manual two-account read test after RLS or API changes. For a budget-approved live test, record the deployed commit, target, task, status transitions, completed report link (private), provider run/session outcome, and cleanup result. Keep API keys and private IDs out of public screenshots.
 
-No CI workflow, Vitest suite, or full Playwright end-to-end fixture is checked in. The worker tests do not verify database concurrency, production deployments, provider cleanup, or accessibility of the whole visitor task. Add those checks as the project grows, then update this guide with the actual workflow file and commands.
+The repository includes `.github/workflows/checks.yml`, which runs web lint/build and worker TypeScript checks on pushes and pull requests. It does not run the worker test script, verify database concurrency, production deployments, provider cleanup, or accessibility of the whole visitor task. Confirm the workflow result in GitHub before treating checks as passed for a release commit.
 
 ## 9. Vercel web deployment
 
@@ -164,7 +164,7 @@ The account's dashboard does not provide a cancellation button or retry action f
 
 ## 12. Monitoring and response
 
-The worker logs startup, queue-claim problems, completed scans, stage failures, and browser-cleanup warnings. Supabase holds scan state and failure codes; the current detail API does not expose `failure_code` to the user. TinyFish dashboard provides provider-side run/session information to the key owner. These are the current operational evidence sources.
+The worker logs startup, queue-claim problems, completed scans, stage failures, and browser-cleanup warnings. Supabase holds scan state and failure codes; the owner-scoped scan list exposes only known failure codes and the dashboard maps them to plain-language guidance, while the scan-detail API does not expose the code. TinyFish dashboard provides provider-side run/session information to the key owner. These are the current operational evidence sources.
 
 The repository does not configure alerting for queue depth, worker heartbeat, 429 volume, spend or orphaned sessions. Inspect platform settings before claiming any alert is live. Recommended next work is a small runbook, a worker liveness check, session cleanup monitoring, cost-per-completed-report tracking, and notifications for repeated failures.
 
@@ -198,7 +198,7 @@ If a secret appears in Git, chat, a screenshot or logs, rotate it at its provide
 - [ ] The public Northstar comparison matches the current controlled pages.
 - [ ] One approved live run completes when the team chooses to spend credits; record failure and cleanup if it does not.
 - [ ] Queue is paused or open according to the current test window; caps match the team's budget.
-- [ ] Documentation claims match shipped behavior; planned CI, alerting, Storage and recovery are not described as live.
+- [ ] Documentation claims match shipped behavior; planned alerting, Storage and recovery are not described as live.
 
 ## 15. Implementation status
 
@@ -210,7 +210,7 @@ If a secret appears in Git, chat, a screenshot or logs, rotate it at its provide
 | Northstar three-page live report | Team-verified | Saved route and finding. |
 | GitHub approved-target report | Team-verified | Team reported a completed report; no issue total asserted. |
 | Web build, worker checks | Supported | Commands in package scripts; rerun at release commit. |
-| Automatic CI workflow | Not implemented | No `.github/workflows/ci.yml` in inspected repository. |
+| Automatic source checks | Implemented in source; hosted run pending | `.github/workflows/checks.yml` runs web lint/build and worker TypeScript check. It does not run worker tests. |
 | Worker heartbeat and automated alerts | Not implemented | Use logs, scan state and provider dashboard for now. |
 | Private Storage screenshots | Not implemented | Evidence is optional data URL in scan JSON. |
 

@@ -5,12 +5,26 @@ import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { SCAN_TARGETS } from "@/lib/scan-targets";
 import styles from "./page.module.css";
 
-type SavedScan = { id: string; source: string; target_url: string; task: string; status: string; created_at: string; finished_at: string | null };
+type ScanFailureCode = "journey_blocked" | "journey_loop" | "goal_not_found" | "journey_failed" | "audit_failed" | "saving_failed";
+type SavedScan = { id: string; source: string; target_url: string; task: string; status: string; failure_code: ScanFailureCode | null; created_at: string; finished_at: string | null };
 type Draft = { report: unknown; key: string; name: string };
+
+function failureSummary(code: ScanFailureCode | null): string {
+  switch (code) {
+    case "journey_blocked": return "The route could not be safely followed inside the approved pages. Try a simpler visitor goal.";
+    case "journey_loop": return "The agent repeated the same page and action. The saved route shows where it happened; no accessibility audit was run.";
+    case "goal_not_found": return "The agent did not reach a page that matched the goal. Try naming the page or action more clearly.";
+    case "journey_failed": return "Route discovery did not finish. Check that the approved site is available, then try again.";
+    case "audit_failed": return "The route was found, but the page checks did not finish. Check the target page and worker status before another attempt.";
+    case "saving_failed": return "The report could not be saved after processing. Check worker and provider logs before retrying to avoid a duplicate paid run.";
+    default: return "No report was saved. Check the worker logs before trying again.";
+  }
+}
 
 export default function DashboardPage() {
   const [scans, setScans] = useState<SavedScan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [accessReady, setAccessReady] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -23,16 +37,21 @@ export default function DashboardPage() {
   const [liveBusy, setLiveBusy] = useState(false);
   const [liveError, setLiveError] = useState("");
   const [liveMessage, setLiveMessage] = useState("");
+  const [compareIds, setCompareIds] = useState<string[]>([]);
 
   async function loadScans(silent = false) {
-    if (!silent) { setLoading(true); setError(""); }
+    if (!silent) { setLoading(true); setAccessReady(false); setError(""); }
     try {
       const response = await fetch("/api/scans", { cache: "no-store" });
-      if (response.status === 401) { window.location.assign("/login"); return; }
+      if (response.status === 401) { setAccessReady(false); window.location.replace("/login"); return; }
       const data: { scans?: SavedScan[]; error?: string } = await response.json();
       if (!response.ok || !Array.isArray(data.scans)) throw new Error(data.error || "Could not load scans.");
       setScans(data.scans);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load scans."); }
+      setAccessReady(true);
+    } catch (cause) {
+      if (!silent) setAccessReady(false);
+      setError(cause instanceof Error ? cause.message : "Could not load scans.");
+    }
     finally { if (!silent) setLoading(false); }
   }
 
@@ -98,9 +117,31 @@ export default function DashboardPage() {
   }
 
   async function signOut() {
-    try { await createBrowserSupabase().auth.signOut({ scope: "local" }); }
-    finally { window.location.assign("/"); }
+    setError("");
+    try {
+      const { error: signOutError } = await createBrowserSupabase().auth.signOut({ scope: "local" });
+      if (signOutError) throw signOutError;
+      setAccessReady(false);
+      setScans([]);
+      window.location.replace("/login");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not sign out. Try again.");
+    }
   }
+
+  function toggleCompare(id: string) {
+    setCompareIds(current => current.includes(id)
+      ? current.filter(selected => selected !== id)
+      : current.length < 2 ? [...current, id] : current);
+  }
+
+  if (configured && !accessReady) return <main className={styles.page}>
+    <div className={styles.shell}>
+      <p className={styles.status} role="status">{loading ? "Checking workspace access…" : "Workspace access could not be confirmed."}</p>
+      {error && <p className={styles.error} role="alert">{error}</p>}
+      {!loading && <><button type="button" onClick={() => void loadScans()}>Try again</button> <a href="/login">Sign in ↗</a></>}
+    </div>
+  </main>;
 
   return <main className={styles.page}>
     <header className={styles.header}><a href="/" className={styles.brand}>accesspath<span>.</span></a><span>PRIVATE WORKSPACE</span><button type="button" onClick={signOut} disabled={!configured}>Sign out ↗</button></header>
@@ -140,6 +181,9 @@ export default function DashboardPage() {
       <section className={styles.saved} aria-labelledby="saved-title">
         <div className={styles.sectionHead}><span>{liveEnabled ? "03" : "02"} / MY SAVED SCANS</span><span>OWNER ONLY</span></div>
         <h2 id="saved-title">Evidence library.</h2>
+        <p className={styles.compareHelp}>Select two completed reports to compare findings. This uses saved evidence and does not start a scan.</p>
+        {compareIds.length === 2 && <div className={styles.compareAction} role="status"><span>Two reports selected in order: first is Before, second is After.</span><div><a href={`/reports/compare?before=${encodeURIComponent(compareIds[0])}&after=${encodeURIComponent(compareIds[1])}`}>Compare reports ↗</a><button type="button" onClick={() => setCompareIds([])}>Clear</button></div></div>}
+        {compareIds.length === 1 && <p className={styles.compareSelected} role="status">One report selected as Before. Select a second completed report as After.</p>}
         {loading && <p className={styles.status}>Loading your reports…</p>}
         {!loading && configured && scans.length === 0 && <p className={styles.status}>No saved reports yet. Import the audit you downloaded from the journey studio.</p>}
         <ol>
@@ -147,8 +191,12 @@ export default function DashboardPage() {
             <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
             <div><strong>{scan.task}</strong><small>{scan.target_url}</small><span>{scan.source.toUpperCase()} / {scan.status.toUpperCase()} / {new Date(scan.created_at).toLocaleDateString()}</span></div>
             {scan.status === "completed" || scan.status === "partial"
-              ? <a href={`/reports/local?scan=${encodeURIComponent(scan.id)}`}>Open report ↗</a>
-              : <span className={styles.scanState}>{scan.status === "queued" ? "WAITING" : scan.status === "running" ? "IN PROGRESS" : "NO REPORT"}</span>}
+              ? <div className={styles.rowActions}><a href={`/reports/local?scan=${encodeURIComponent(scan.id)}`}>Open report ↗</a><button type="button" aria-pressed={compareIds.includes(scan.id)} disabled={compareIds.length === 2 && !compareIds.includes(scan.id)} onClick={() => toggleCompare(scan.id)}>{compareIds.includes(scan.id) ? compareIds[0] === scan.id ? "Before selected" : "After selected" : "Select to compare"}</button></div>
+              : scan.status === "failed" && scan.failure_code === "journey_loop"
+                ? <a href={`/reports/local?scan=${encodeURIComponent(scan.id)}`}>Review stopped route ↗</a>
+                : <span className={styles.scanState} aria-live="polite">{scan.status === "queued" ? "WAITING FOR WORKER" : scan.status === "running" ? "IN PROGRESS" : scan.status === "cancelled" ? "CANCELLED" : "FAILED"}</span>}
+            {scan.status === "failed" && <p className={styles.failureSummary}>{failureSummary(scan.failure_code)}</p>}
+            {scan.status === "cancelled" && <p className={styles.failureSummary}>This attempt was cancelled and no report was saved. Start a new scan when you are ready.</p>}
           </li>)}
         </ol>
       </section>

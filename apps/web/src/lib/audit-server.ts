@@ -127,11 +127,44 @@ export async function auditApprovedPages(urls: string[], key: string, allowedHos
       });
       stage = `summarizing approved page ${index + 1}`;
       const findings = summarize(raw);
+      stage = `mapping approved page ${index + 1}`;
+      const pageDetails = await page.evaluate(() => ({
+        description: document.querySelector('meta[name="description"]')?.getAttribute("content") ?? null,
+        language: document.documentElement.lang || null,
+        canonicalUrl: document.querySelector('link[rel="canonical"]')?.getAttribute("href") ?? null,
+        robots: document.querySelector('meta[name="robots"]')?.getAttribute("content") ?? null,
+        headings: Array.from(document.querySelectorAll("h1, h2")).slice(0, 12).map(node => node.textContent?.trim() ?? ""),
+        links: Array.from(document.querySelectorAll("a[href]")).slice(0, 100).map(node => ({
+          url: (node as HTMLAnchorElement).href,
+          label: node.textContent?.trim() ?? "",
+        })),
+      }));
+      const linkSet = new Set<string>();
+      const approvedLinks = pageDetails.links.flatMap(link => {
+        const approved = approvedUrl(link.url, allowedHosts, origin)?.toString() ?? null;
+        if (!approved || linkSet.has(approved)) return [];
+        linkSet.add(approved);
+        return [{ url: approved, label: link.label.slice(0, 100) }];
+      }).slice(0, 12);
+      let canonicalUrl: string | null = null;
+      if (pageDetails.canonicalUrl) {
+        try { canonicalUrl = approvedUrl(new URL(pageDetails.canonicalUrl, finalUrl).href, allowedHosts, origin)?.toString() ?? null; }
+        catch { /* A malformed canonical tag must not fail the audit. */ }
+      }
+      const metadata: AuditPage["metadata"] = {
+        description: pageDetails.description?.slice(0, 300) ?? null,
+        language: pageDetails.language?.slice(0, 40) ?? null,
+        canonicalUrl,
+        robots: pageDetails.robots?.slice(0, 100) ?? null,
+        headings: pageDetails.headings.filter(Boolean).map(heading => heading.slice(0, 120)),
+        approvedLinks,
+      };
       stage = `capturing approved page ${index + 1}`;
       const bytes = await page.screenshot({ type: "jpeg", quality: 65, fullPage: false });
       pages.push({
         url: finalUrl.toString(),
         title: (await page.title()).slice(0, 180),
+        metadata,
         ...findings,
         screenshot: bytes.length <= MAX_SCREENSHOT_BYTES ? `data:image/jpeg;base64,${bytes.toString("base64")}` : null,
       });

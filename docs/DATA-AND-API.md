@@ -56,7 +56,7 @@ erDiagram
 | `journey jsonb` | Structured live Agent result; maximum 30 KB. |
 | `idempotency_key uuid` | Client-generated UUID, unique with `user_id`. |
 | `created_at`, `started_at`, `finished_at` | Lifecycle timestamps. `started_at` was added with the live queue. |
-| `failure_code text` | Short worker reason, maximum 80 characters. Not returned by the current scan-detail API. |
+| `failure_code text` | Short worker reason, maximum 80 characters. The owner-scoped scan list returns only known values; the UI maps them to bounded guidance and never displays raw exception text. |
 
 The schema permits `partial` and `cancelled`, but the current live worker writes only `completed` or `failed`. The application has no public cancellation endpoint. A queued row can be changed by an operator in the database; never assume that a schema enum means the corresponding user flow is implemented.
 
@@ -259,7 +259,7 @@ The real validator requires one to three complete page objects, approved Northst
 
 The detail endpoint first checks UUID syntax; an invalid syntax returns 400. When a well-formed ID is not present or belongs to another user, the owner-scoped query returns no row and the endpoint responds 404. Worker-stage failures are not HTTP responses to the original POST; they appear later as scan status, with a failure code stored in the database but not exposed by the current detail API.
 
-The dashboard displays scan status and links completed/partial rows to the report page. It polls the list while a queued/running row is present. Reports remain private to the owner; public `/reports/demo` is a separate, static controlled comparison.
+The dashboard displays scan status and links completed/partial rows to the report page. It polls the list while a queued/running row is present. For failed/cancelled rows it maps known `failure_code` values to plain-language next steps; it does not expose worker exception text. The comparison page fetches both reports through the same owner-scoped detail API and compares matching page URLs without adding a database endpoint. Reports remain private to the owner; public `/reports/demo` is a separate, static controlled comparison.
 
 ## 9. Idempotency and budgets
 

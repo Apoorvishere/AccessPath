@@ -17,6 +17,17 @@ function safeHttps(value: string): string | null {
   }
 }
 
+function repeatedStep(steps: JourneyResult["steps"]): { first: number; repeated: number } | null {
+  const seen = new Map<string, number>();
+  for (const [index, step] of steps.entries()) {
+    const key = `${step.url}\n${step.action.trim().toLowerCase().replace(/\s+/g, " ")}`;
+    const first = seen.get(key);
+    if (first !== undefined) return { first, repeated: index };
+    seen.set(key, index);
+  }
+  return null;
+}
+
 function parseAudit(value: unknown): AuditResult {
   if (!value || typeof value !== "object") throw new Error("This file is not an AccessPath audit export.");
   const result = value as Partial<AuditResult>;
@@ -37,6 +48,21 @@ function parseAudit(value: unknown): AuditResult {
     if (page.screenshot !== null &&
         (typeof page.screenshot !== "string" || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(page.screenshot))) {
       throw new Error("A screenshot is not a supported JPEG image.");
+    }
+    if (page.metadata !== undefined) {
+      const meta = page.metadata;
+      if (!meta || typeof meta !== "object" ||
+          (meta.description !== null && (typeof meta.description !== "string" || meta.description.length > 300)) ||
+          (meta.language !== null && (typeof meta.language !== "string" || meta.language.length > 40)) ||
+          (meta.robots !== null && (typeof meta.robots !== "string" || meta.robots.length > 100)) ||
+          (meta.canonicalUrl !== null && (typeof meta.canonicalUrl !== "string" || !safeHttps(meta.canonicalUrl))) ||
+          !Array.isArray(meta.headings) || meta.headings.length > 12 ||
+          !meta.headings.every(item => typeof item === "string" && item.length <= 120) ||
+          !Array.isArray(meta.approvedLinks) || meta.approvedLinks.length > 12 ||
+          !meta.approvedLinks.every(link => link && typeof link.label === "string" && link.label.length <= 100 &&
+            typeof link.url === "string" && safeHttps(link.url) && new URL(link.url).origin === new URL(page.url).origin)) {
+        throw new Error("A page map in this export is invalid.");
+      }
     }
     for (const finding of page.violations) {
       if (!finding || typeof finding.id !== "string" || typeof finding.help !== "string" ||
@@ -86,6 +112,7 @@ export default function LocalReportPage() {
   const [error, setError] = useState("");
   const [source, setSource] = useState<"studio" | "file" | "saved" | null>(null);
   const [journey, setJourney] = useState<JourneyResult | null>(null);
+  const [loopReview, setLoopReview] = useState<{ first: number; repeated: number } | null>(null);
 
   useEffect(() => {
     const scanId = new URLSearchParams(window.location.search).get("scan");
@@ -97,16 +124,27 @@ export default function LocalReportPage() {
       void (async () => {
         try {
           const response = await fetch(`/api/scans/${encodeURIComponent(scanId)}`, { cache: "no-store" });
-          const data: { scan?: { report?: unknown; journey?: unknown }; error?: string } = await response.json();
+          const data: { scan?: { report?: unknown; journey?: unknown; status?: string; failure_code?: string | null }; error?: string } = await response.json();
           if (!response.ok) throw new Error(data.error || "Could not load this saved report.");
-          setAudit(parseAudit(data.scan?.report));
           const route = data.scan?.journey;
+          let validJourney: JourneyResult | null = null;
           if (route && typeof route === "object" && !Array.isArray(route)) {
             const candidate = route as Partial<JourneyResult>;
-            if (candidate.outcome === "completed" && typeof candidate.summary === "string" && Array.isArray(candidate.steps) &&
+            if (["completed", "not_found", "blocked"].includes(String(candidate.outcome)) &&
+                typeof candidate.summary === "string" && Array.isArray(candidate.steps) && candidate.steps.length <= 6 &&
                 candidate.steps.every(step => step && typeof step === "object" && typeof step.title === "string" && typeof step.url === "string" && typeof step.action === "string" && typeof step.observation === "string" && safeHttps(step.url))) {
-              setJourney(candidate as JourneyResult);
+              validJourney = candidate as JourneyResult;
             }
+          }
+          if (data.scan?.status === "failed" && data.scan.failure_code === "journey_loop") {
+            const repeated = validJourney && repeatedStep(validJourney.steps);
+            if (!validJourney || !repeated) throw new Error("This stopped route has no valid loop evidence to display.");
+            setJourney(validJourney);
+            setLoopReview(repeated);
+            setAudit(null);
+          } else {
+            setAudit(parseAudit(data.scan?.report));
+            if (validJourney?.outcome === "completed") setJourney(validJourney);
           }
           setSource("saved");
         } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not load this saved report."); }
@@ -132,6 +170,7 @@ export default function LocalReportPage() {
       const parsed = parseAudit(JSON.parse(await file.text()));
       setAudit(parsed);
       setJourney(null);
+      setLoopReview(null);
       setSource("file");
       try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(parsed)); } catch { /* The imported file remains available in this tab. */ }
     } catch (cause) {
@@ -158,12 +197,12 @@ export default function LocalReportPage() {
         <div className={styles.eyebrow}>FIELD NOTE 003 / EVIDENCE</div>
         <div className={styles.hero}>
           <div>
-            <h1>Make the findings<br /><em>actionable.</em></h1>
-            <p>This report arranges one saved automated audit by page and finding. It keeps screenshots, affected elements, and checks needing human review together.</p>
+            <h1>{loopReview ? <>Review the stopped<br /><em>route.</em></> : <>Make the findings<br /><em>actionable.</em></>}</h1>
+            <p>{loopReview ? "The agent repeated a page and action. Review the recorded steps below; no accessibility audit was run for this scan." : "This report arranges one saved automated audit by page and finding. It keeps screenshots, affected elements, and checks needing human review together."}</p>
           </div>
           <div className={styles.heroAside}>
             <span>REPORT SOURCE</span>
-            <strong>{source === "studio" ? "This tab’s audit" : source === "file" ? "Imported JSON" : source === "saved" ? "Saved to workspace" : "Awaiting audit"}</strong>
+            <strong>{loopReview ? "Stopped route" : source === "studio" ? "This tab’s audit" : source === "file" ? "Imported JSON" : source === "saved" ? "Saved to workspace" : "Awaiting audit"}</strong>
             <small>Local preview · no new scan or API charge</small>
           </div>
         </div>
@@ -172,13 +211,24 @@ export default function LocalReportPage() {
           <div>
             <label className={styles.importButton} htmlFor="audit-json">{audit ? "Replace audit JSON ↗" : "Import audit JSON ↗"}</label>
             <input id="audit-json" type="file" accept=".json,application/json" onChange={importFile} className={styles.fileInput} />
-            {audit && <button type="button" onClick={() => window.print()}>Print / save PDF ↗</button>}
+            {(audit || loopReview) && <button type="button" onClick={() => window.print()}>Print / save PDF ↗</button>}
           </div>
           <p>Use the file downloaded from the journey studio. The report stays in this browser tab.</p>
         </section>
         {error && <p className={styles.error} role="alert">{error}</p>}
 
-        {!audit ? (
+        {loopReview && journey ? (
+          <section className={styles.journey} aria-labelledby="loop-title">
+            <div className={styles.sectionHead}><span>ROUTE REVIEW / POSSIBLE LOOP</span><span>NO ACCESSIBILITY AUDIT</span></div>
+            <h2 id="loop-title">A step was repeated.</h2>
+            <p>Step {loopReview.repeated + 1} repeated the same page and action as step {loopReview.first + 1}. The scan stopped before page checks, so this record contains no accessibility findings or conformance result.</p>
+            <p>Agent summary: {journey.summary}</p>
+            <ol>{journey.steps.map((step, index) => <li key={`${index}-${step.url}`}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <div><strong>{step.title}{index === loopReview.repeated ? " — repeated step" : ""}</strong><small>{step.url}</small><small>{step.action}</small><p>{step.observation}</p></div>
+            </li>)}</ol>
+          </section>
+        ) : !audit ? (
           <section className={styles.empty}>
             <span>NO AUDIT LOADED</span>
             <h2>Bring in the evidence.</h2>
@@ -221,6 +271,26 @@ export default function LocalReportPage() {
                 ))}
               </ol>
             </section>
+
+            {audit.pages.some(page => page.metadata) && <section className={styles.pageMap} aria-labelledby="map-title">
+              <div className={styles.sectionHead}><span>PAGE MAP / OBSERVED METADATA</span><span>{audit.pages.filter(page => page.metadata).length} MAPPED PAGES</span></div>
+              <h2 id="map-title">What these pages reveal.</h2>
+              <p>This map records metadata and approved links observed on checked pages. Linked pages that are not in the checked route were not audited. It is not a complete website sitemap.</p>
+              {audit.pages.filter(page => page.metadata).map((page, index) => <article className={styles.mapCard} key={`${index}-${page.url}`}>
+                <h3>{page.title || page.url}</h3>
+                <small>{page.url}</small>
+                <dl>
+                  <div><dt>Description</dt><dd>{page.metadata?.description || "Not supplied"}</dd></div>
+                  <div><dt>Language</dt><dd>{page.metadata?.language || "Not declared"}</dd></div>
+                  <div><dt>Canonical</dt><dd>{page.metadata?.canonicalUrl || "No approved canonical URL recorded"}</dd></div>
+                  <div><dt>Robots</dt><dd>{page.metadata?.robots || "Not declared"}</dd></div>
+                </dl>
+                <h4>Headings observed</h4>
+                {page.metadata?.headings.length ? <ul>{page.metadata.headings.map((heading, headingIndex) => <li key={headingIndex}>{heading}</li>)}</ul> : <p>No H1 or H2 headings recorded.</p>}
+                <h4>Approved links observed</h4>
+                {page.metadata?.approvedLinks.length ? <ul>{page.metadata.approvedLinks.map(link => <li key={link.url}><a href={link.url} target="_blank" rel="noopener noreferrer">{link.label || link.url} ↗</a></li>)}</ul> : <p>No approved links recorded.</p>}
+              </article>)}
+            </section>}
 
             <section className={styles.findings} aria-labelledby="findings-title">
               <div className={styles.sectionHead}><span>03 / FINDINGS</span><span>REQUIRES TRIAGE</span></div>
