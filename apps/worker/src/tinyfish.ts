@@ -83,6 +83,25 @@ export async function discoverDemoJourney(targetUrl: string, task: string, apiKe
   }
   throw new Error("Agent run exceeded the polling window");
 }
+export function repeatedJourneyStep(
+  journey: Journey
+): { first: number; repeated: number } | null {
+  const seen = new Map<string, number>();
+
+  for (const [index, step] of journey.steps.entries()) {
+    const action = step.action.trim().toLowerCase().replace(/\s+/g, " ");
+    const key = `${step.url}\n${action}`;
+    const first = seen.get(key);
+
+    if (first !== undefined) {
+      return { first, repeated: index };
+    }
+
+    seen.set(key, index);
+  }
+
+  return null;
+}
 
 export function auditUrlsFromJourney(journey: Journey): string[] {
   if (journey.outcome !== "completed") return [];
