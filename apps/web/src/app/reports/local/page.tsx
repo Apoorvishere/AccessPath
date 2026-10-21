@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
+import Link from "next/link";
 import type { AuditResult, AuditViolation } from "@/lib/audit-types";
 import type { JourneyResult } from "@/lib/journey-types";
 import styles from "./page.module.css";
@@ -115,6 +116,7 @@ export default function LocalReportPage() {
   const [loopReview, setLoopReview] = useState<{ first: number; repeated: number } | null>(null);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
     const scanId = new URLSearchParams(window.location.search).get("scan");
     if (scanId) {
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scanId)) {
@@ -159,6 +161,8 @@ export default function LocalReportPage() {
     } catch {
       try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* File import remains available. */ }
     }
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   async function importFile(event: ChangeEvent<HTMLInputElement>) {
@@ -188,9 +192,9 @@ export default function LocalReportPage() {
   return (
     <main className={styles.page}>
       <header className={styles.siteHeader}>
-        <a className={styles.brand} href="/" aria-label="AccessPath home">accesspath<span>.</span></a>
+        <Link className={styles.brand} href="/" aria-label="AccessPath home">accesspath<span>.</span></Link>
         <span>REPORT / LOCAL PREVIEW</span>
-        <a href="/dashboard">My workspace ↗</a>
+        <Link href="/dashboard">My workspace ↗</Link>
       </header>
 
       <div className={styles.shell}>
@@ -323,7 +327,7 @@ export default function LocalReportPage() {
           </>
         )}
       </div>
-      <footer className={styles.footer}><strong>accesspath<span>.</span></strong><p>Automated evidence supports accessibility work; it does not establish full conformance.</p><a href="/journeys/new">Back to studio ↑</a></footer>
+      <footer className={styles.footer}><strong>accesspath<span>.</span></strong><p>Automated evidence supports accessibility work; it does not establish full conformance.</p><Link href="/journeys/new">Back to studio ↑</Link></footer>
     </main>
   );
 }

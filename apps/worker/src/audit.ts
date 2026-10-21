@@ -6,7 +6,8 @@ import { approvedPageUrl, targetForStart, type ScanTarget } from "./targets";
 
 const BROWSER_API = "https://api.browser.tinyfish.ai";
 const MAX_PAGES = 3;
-const MAX_SCREENSHOT_BYTES = 350_000;
+const MAX_SCREENSHOT_BYTES = 500_000; // 500 KB before JSON encoding.
+
 const AXE_SCRIPT = createRequire(import.meta.url).resolve("axe-core/axe.min.js");
 
 type BrowserSession = { session_id: string; cdp_url: string };

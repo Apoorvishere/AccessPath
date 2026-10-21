@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import styles from "./page.module.css";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,14 +25,14 @@ export default function LoginPage() {
       if (mode === "sign-in") {
         const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (authError) throw authError;
-        window.location.assign("/dashboard");
+        router.replace("/dashboard");
       } else {
         const { data, error: authError } = await supabase.auth.signUp({
           email: email.trim(), password,
           options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
         if (authError) throw authError;
-        if (data.session) window.location.assign("/dashboard");
+        if (data.session) router.replace("/dashboard");
         else setMessage("Check your email for the confirmation link, then return to sign in.");
       }
     } catch (cause) {
@@ -38,7 +41,7 @@ export default function LoginPage() {
   }
 
   return <main className={styles.page}>
-    <header className={styles.header}><a href="/" className={styles.brand}>accesspath<span>.</span></a><a href="/">Back to home ↗</a></header>
+    <header className={styles.header}><Link href="/" className={styles.brand}>accesspath<span>.</span></Link><Link href="/">Back to home ↗</Link></header>
     <div className={styles.layout}>
       <section className={styles.intro}>
         <span className={styles.eyebrow}>ACCESSPATH / YOUR WORKSPACE</span>

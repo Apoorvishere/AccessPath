@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { AuditResult } from "@/lib/audit-types";
 import type { JourneyResult, JourneyRun } from "@/lib/journey-types";
 import styles from "./page.module.css";
@@ -15,6 +17,7 @@ const demoRoute = [
 ];
 
 export default function NewJourneyPage() {
+  const router = useRouter();
   const [url, setUrl] = useState("");
   const [goal, setGoal] = useState("");
   const [accessCode, setAccessCode] = useState("");
@@ -148,7 +151,7 @@ export default function NewJourneyPage() {
     if (!auditResult) return;
     try {
       sessionStorage.setItem("accesspath:local-audit-report", JSON.stringify(auditResult));
-      window.location.assign("/reports/local");
+      router.push("/reports/local");
     } catch {
       setReportError("Could not open the report from this tab. Download the audit JSON, then import it at /reports/local.");
     }
@@ -157,7 +160,7 @@ export default function NewJourneyPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <a className={styles.brand} href="/" aria-label="AccessPath home">
+        <Link className={styles.brand} href="/" aria-label="AccessPath home">
           <span className={styles.mark} aria-hidden="true">
             <svg viewBox="0 0 36 36" fill="none">
               <path d="M7 28V9h10c7 0 12 4 12 10s-5 9-11 9H7Z" stroke="currentColor" strokeWidth="2.4" />
@@ -165,9 +168,9 @@ export default function NewJourneyPage() {
             </svg>
           </span>
           <span>accesspath<span className={styles.period}>.</span></span>
-        </a>
+        </Link>
         <span className={styles.headerLabel}>JOURNEY STUDIO / PRIVATE PREVIEW</span>
-        <a className={styles.backLink} href="/">Back to home <span aria-hidden="true">↗</span></a>
+        <Link className={styles.backLink} href="/">Back to home <span aria-hidden="true">↗</span></Link>
       </header>
 
       <div className={styles.layout}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import styles from "./page.module.css";
 
 type Finding = { id: string; help: string; impact: string | null; affectedCount: number; selectors: string[] };
@@ -58,9 +59,11 @@ export default function CompareReportsPage() {
     const afterId = params.get("after") ?? "";
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuid.test(beforeId) || !uuid.test(afterId) || beforeId === afterId) {
-      setError("Choose two different saved reports from your workspace.");
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        setError("Choose two different saved reports from your workspace.");
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
     let active = true;
     void Promise.all([loadReport(beforeId), loadReport(afterId)])
@@ -112,7 +115,7 @@ export default function CompareReportsPage() {
   }, [before, after]);
 
   return <main className={styles.page}>
-    <header className={styles.header}><a href="/" className={styles.brand}>accesspath<span>.</span></a><span>REPORT / BEFORE AND AFTER</span><a href="/dashboard">Back to workspace ↗</a></header>
+    <header className={styles.header}><Link href="/" className={styles.brand}>accesspath<span>.</span></Link><span>REPORT / BEFORE AND AFTER</span><Link href="/dashboard">Back to workspace ↗</Link></header>
     <div className={styles.shell}>
       <div className={styles.eyebrow}>FIELD NOTE 004 / CHANGE REVIEW</div>
       <section className={styles.hero} aria-labelledby="title">
@@ -140,6 +143,6 @@ export default function CompareReportsPage() {
           <section className={styles.review}><span>HUMAN REVIEW / REQUIRED</span><p>Open the affected pages, inspect each element, and repeat the visitor task with keyboard and assistive technology. An automated rule no longer appearing in a later report is useful evidence, but a person must confirm the barrier and the fix in context.</p></section>
         </>)}
     </div>
-    <footer className={styles.footer}><strong>accesspath<span>.</span></strong><p>Automated findings support review; they do not establish full accessibility conformance.</p><a href="/dashboard">Back to workspace ↑</a></footer>
+    <footer className={styles.footer}><strong>accesspath<span>.</span></strong><p>Automated findings support review; they do not establish full accessibility conformance.</p><Link href="/dashboard">Back to workspace ↑</Link></footer>
   </main>;
 }
