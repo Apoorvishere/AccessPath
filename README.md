@@ -96,6 +96,8 @@ pnpm dev
 
 Open `http://localhost:3000`. The public landing page and local demo do not require keys. For sign-in, put the names from the root `.env.example` in `apps/web/.env.local` using your own Supabase project URL and publishable key. The local environment file is ignored by Git.
 
+For a **live scan during a local demonstration**, use `pnpm demo:local` instead of `pnpm dev`. It starts the website and queue worker together and stops both with Ctrl+C. This requires `apps/web/.env.local` and `apps/worker/.env.local`, installed dependencies, `ACCESSPATH_WORKER_ENABLED=true` in the worker file, an enabled database queue, and a configured approved target. Stop the Railway worker while using the local worker so only one worker claims scans. The worker's secret file is loaded into the worker process only. You can check the required local files without starting either process using `node scripts/dev-with-worker.mjs --check`.
+
 The private journey preview and audit routes need additional server-only values listed in the [setup guide](docs/SETUP-AND-DEPLOYMENT.md#4-environment-variables). Keep `TINYFISH_API_KEY` and preview codes out of `NEXT_PUBLIC_*` variables. Never commit credentials or private audit exports.
 
 To create your own database, run the migrations in order from `supabase/migrations/` in a fresh Supabase project. The second migration creates the live queue in the **paused** state. The third migration excludes never-started cancelled jobs from paid-scan limits. The fourth allows a second paid diagnostic attempt in one UTC day; it does not enable the queue. Configure the worker separately with `SUPABASE_URL`, a Supabase `sb_secret_` key, `TINYFISH_API_KEY`, and `ACCESSPATH_WORKER_ENABLED=true`. Do not place the secret key in the web app.

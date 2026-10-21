@@ -85,6 +85,10 @@ The live queued worker does not use the web server's `TINYFISH_API_KEY`; however
 
 Keep worker secrets in Railway service variables, not in GitHub or Vercel public variables. A secret key bypasses normal user RLS, so rotate it promptly if exposed. Record which teammate owns each external account and where rotation is performed, without putting key values in documentation.
 
+### One-command local live demo
+
+For a local demonstration with live scans, create the ignored `apps/web/.env.local` and `apps/worker/.env.local` files using the variables above. Set `ACCESSPATH_WORKER_ENABLED=true` in the worker file, confirm the Supabase queue is enabled, and stop the Railway worker before starting a local worker. From the repository root, run `pnpm demo:local`. This launches Next.js on port 3000 and the queue worker in the same terminal; Ctrl+C stops both. If either process exits, the launcher stops the other. The worker environment file is loaded only by the worker process, not by the website. `node scripts/dev-with-worker.mjs --check` validates that the local files and installed tools are present without starting a scan.
+
 ## 5. Supabase database setup
 
 The repository contains eight dated SQL files in `supabase/migrations/`, from `202610180001_saved_scans.sql` through `202610180008_browser_csp_retry_budget.sql`. Apply them **in filename order once to a fresh project** through the Supabase SQL Editor, reviewing each before running it. Some migrations create tables and functions without `IF NOT EXISTS`; rerunning the full sequence on an already migrated database can fail with “relation already exists.” Do not treat that error as proof that the entire migration sequence succeeded.
