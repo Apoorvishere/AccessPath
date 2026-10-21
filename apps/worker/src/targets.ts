@@ -1,5 +1,6 @@
 export const NORTHSTAR_START = "https://access-path-mu.vercel.app/demo-site";
 export const GITHUB_START = "https://github.com/Apoorvishere/AccessPath";
+export const WIKIPEDIA_START = "https://en.wikipedia.org/wiki/Web_accessibility";
 
 export type ScanTarget = {
   startUrl: string;
@@ -12,6 +13,10 @@ const northstarPaths = new Set([
   "/demo-site", "/demo-site/", "/demo-site/support", "/demo-site/contact", "/demo-site/fixed/contact",
 ]);
 const githubPath = /^\/Apoorvishere\/AccessPath(?:\/(?:tree|blob)\/main\/[A-Za-z0-9._/-]+)?\/?$/;
+const wikipediaPaths = new Set([
+  "/wiki/Web_accessibility",
+  "/wiki/Web_Content_Accessibility_Guidelines",
+]);
 
 const targets: ScanTarget[] = [
   {
@@ -25,6 +30,12 @@ const targets: ScanTarget[] = [
     label: "AccessPath public GitHub repository",
     instruction: "Stay within the public Apoorvishere/AccessPath repository on github.com. Only read repository pages and files.",
     allowsPath: path => githubPath.test(path),
+  },
+  {
+    startUrl: WIKIPEDIA_START,
+    label: "Wikipedia accessibility articles",
+    instruction: "Stay on en.wikipedia.org and only visit the Web accessibility and Web Content Accessibility Guidelines articles. Read pages only; do not edit or follow external links.",
+    allowsPath: path => wikipediaPaths.has(path),
   },
 ];
 

@@ -46,7 +46,13 @@ A single URL check can miss the context of a task such as finding help or reachi
 
 The live queue accepts two exact starting URLs: the [Northstar demo](https://access-path-mu.vercel.app/demo-site) and the [public AccessPath GitHub repository](https://github.com/Apoorvishere/AccessPath). Users can write a visitor goal for either target. It does not scan arbitrary websites, log in, submit forms, or change a target site. The worker audits at most three approved visited pages. GitHub's pages and results can change, so the Northstar fixture remains the reproducible demonstration.
 
-## Demo in two minutes
+### Wikipedia reading journey (integration pending deployment)
+
+The next approved target starts at Wikipedia's [Web accessibility article](https://en.wikipedia.org/wiki/Web_accessibility). The example goal is to find the linked [Web Content Accessibility Guidelines article](https://en.wikipedia.org/wiki/Web_Content_Accessibility_Guidelines). Only those two public article URLs are permitted for this target. TinyFish records the visited route; the worker then runs axe-core on the visited pages. This is a bounded reading-journey audit, not an audit of Wikipedia as a whole. Follow the [Wikipedia release steps](docs/WIKIPEDIA-TARGET.md) before enabling it. No Wikipedia result is claimed here yet.
+
+## Demo in minutes
+
+Watch the [AccessPath demo video](docs/assets/accesspath-demo.mp4).
 
 1. Open the [controlled demo](https://access-path-mu.vercel.app/demo-site) and follow **Home → Support → Contact**.
 2. Open the [verified audit report](https://access-path-mu.vercel.app/reports/demo). Inspect the `label` finding on the contact form and its screenshot.

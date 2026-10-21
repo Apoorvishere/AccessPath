@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { auditUrlsFromJourney, parseJourney } from "./tinyfish";
-import { targetForStart, NORTHSTAR_START, GITHUB_START } from "./targets";
+import { targetForStart, NORTHSTAR_START, GITHUB_START, WIKIPEDIA_START } from "./targets";
 
 const northstar = targetForStart(NORTHSTAR_START)!;
 const github = targetForStart(GITHUB_START)!;
+const wikipedia = targetForStart(WIKIPEDIA_START)!;
 
 const base = {
   outcome: "completed",
@@ -36,5 +37,16 @@ test("public GitHub audit stays inside the owned repository", () => {
   assert.ok(parseJourney({ ...base, steps: [{ ...step, url: `${GITHUB_START}/blob/main/README.md` }] }, github));
   for (const url of ["https://github.com/login", "https://github.com/Apoorvishere/Other", "https://github.com/Apoorvishere/AccessPath/issues", "https://github.com/Apoorvishere/AccessPath?tab=readme-ov-file"]) {
     assert.equal(parseJourney({ ...base, steps: [{ ...step, url }] }, github), null);
+  }
+});
+
+test("Wikipedia journey accepts only the two approved public articles", () => {
+  const step = { ...base.steps[0], url: WIKIPEDIA_START };
+  const guidelines = "https://en.wikipedia.org/wiki/Web_Content_Accessibility_Guidelines";
+  const journey = parseJourney({ ...base, steps: [step, { ...step, url: guidelines }] }, wikipedia);
+  assert.ok(journey);
+  assert.deepEqual(auditUrlsFromJourney(journey), [WIKIPEDIA_START, guidelines]);
+  for (const url of ["https://en.wikipedia.org/wiki/Main_Page", "https://en.wikipedia.org/wiki/Special:UserLogin", "https://en.wikipedia.org/wiki/Web_accessibility?action=edit", "https://en.wikipedia.org.evil.test/wiki/Web_accessibility"]) {
+    assert.equal(parseJourney({ ...base, steps: [{ ...step, url }] }, wikipedia), null);
   }
 });
