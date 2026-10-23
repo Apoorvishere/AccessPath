@@ -191,8 +191,8 @@ export default function Home() {
           </div>
           <div className={styles.footerColumns}>
             <div><h3>Explore</h3><a href="#top">Home</a><a href="#approach">Our approach</a><a href="#example-report">Report preview</a></div>
-            <div><h3>Project</h3><a href="https://github.com/Apoorvishere/AccessPath" target="_blank" rel="noopener noreferrer">GitHub repository ↗</a><span>License to be selected</span><span>Privacy policy in preparation</span></div>
-            <div><h3>Contact</h3><span>Team contact will be published with the repository.</span><span>USAR, GGSIPU East Delhi Campus</span></div>
+            <div><h3>Project</h3><a href="https://github.com/Apoorvishere/AccessPath" target="_blank" rel="noopener noreferrer">GitHub repository ↗</a><a href="/reports/demo">Verified demo audit ↗</a></div>
+            <div><h3>Contact</h3><a href="mailto:apoorvjhaeit@eitfaridabad.co.in">apoorvjhaeit@eitfaridabad.co.in</a><a href="https://apoorv.onepage.me/" target="_blank" rel="noopener noreferrer">apoorv.onepage.me ↗</a></div>
           </div>
         </div>
         <div className={styles.footerBottom}>

@@ -301,7 +301,7 @@
 .footerColumns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 30px; padding-top: 9px; }
 .footerColumns > div { display: flex; flex-direction: column; align-items: start; gap: 14px; }
 .footerColumns h3 { margin: 0 0 12px; color: var(--sky); font-family: var(--font-mono), monospace; font-size: 10px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; }
-.footerColumns a, .footerColumns span { max-width: 190px; color: #c3d0da; font-size: 11px; line-height: 1.6; }
+.footerColumns a, .footerColumns span { max-width: 190px; overflow-wrap: anywhere; color: #c3d0da; font-size: 11px; line-height: 1.6; }
 .footerColumns a { transition: color .2s ease, transform .2s ease; }
 .footerColumns a:hover { color: #fff; transform: translateX(4px); }
 .footerBottom { display: flex; align-items: center; gap: 30px; min-height: 90px; padding: 23px 0; border-top: 1px solid #4c565f; }
