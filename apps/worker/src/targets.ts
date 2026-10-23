@@ -34,7 +34,7 @@ const targets: ScanTarget[] = [
   {
     startUrl: WIKIPEDIA_START,
     label: "Wikipedia accessibility articles",
-    instruction: "Stay on en.wikipedia.org and only visit the Web accessibility and Web Content Accessibility Guidelines articles. Read pages only; do not edit or follow external links.",
+    instruction: "Stay on en.wikipedia.org and only visit the Web accessibility and Web Content Accessibility Guidelines articles. Use the 'Main article: Web Content Accessibility Guidelines' link on the starting page. After clicking, wait for the browser URL to become /wiki/Web_Content_Accessibility_Guidelines and confirm that page loaded. If the URL stays on /wiki/Web_accessibility, try that link once more. Record a new step only after its URL has changed. Read pages only; do not edit or follow external links.",
     allowsPath: path => wikipediaPaths.has(path),
   },
 ];
