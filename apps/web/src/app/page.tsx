@@ -63,8 +63,11 @@ export default function Home() {
           <a href="/dashboard">My workspace</a>
         </nav>
 
+        <a className={styles.mobileSignIn} href="/login">Sign in</a>
         <a className={styles.headerAction} href="/journeys/new">
-          Create a journey <Arrow diagonal />
+          <span className={styles.headerActionFull}>Create a journey</span>
+          <span className={styles.headerActionShort}>Start</span>
+          <Arrow diagonal />
         </a>
       </header>
 
